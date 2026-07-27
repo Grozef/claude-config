@@ -10,8 +10,8 @@
 #   cdc.sh render [--html] [--docx] [--open] [--brand <nom|dir>|--no-brand] <f.md>
 #       Convertit un fichier déjà rempli (cas workflow : scaffold -> remplissage -> render).
 #       Lint anti-dette auto avant conversion (garde-fou n4).
-#       Branding : kit 'lab' (logo + pagination) appliqué PAR DÉFAUT.
-#       --brand <autre> pour un autre kit, --no-brand pour désactiver.
+#       Branding : le kit $CLAUDE_BRAND_DIR (vault.conf) est appliqué PAR DÉFAUT s'il existe.
+#       --brand <nom|dir> pour un autre kit, --no-brand pour désactiver.
 #   cdc.sh inventory <path>
 #       GATE doc : liste la doc (*.md hors vendor/node_modules) + dossiers docs/doc/toDo/.scribe.
 #   cdc.sh lint <f.md>
@@ -21,6 +21,8 @@
 #   public|tech|full|cdcf -> skills/cdc/trames/trame-<type>.md
 #   fill                  -> skills/cdc/templates/template-fill.md
 set -euo pipefail
+
+if [ -f "$HOME/.claude/vault.conf" ]; then . "$HOME/.claude/vault.conf"; fi
 
 root="$HOME/.claude/skills/cdc"
 md2html="$HOME/.claude/tools/md2html.sh"
@@ -120,11 +122,12 @@ render() {
   # Tout CDC généré reste hors versioning.
   gitignore_out "$file"
 
-  # Branding par défaut : kit 'lab' (logo + pagination). --no-brand pour désactiver.
-  [ -n "$brand" ] || brand="lab"
+  # Branding par défaut : le kit désigné par CLAUDE_BRAND_DIR (vault.conf), s'il est
+  # configuré. --brand <nom|dir> pour un autre kit, --no-brand pour désactiver.
+  [ -n "$brand" ] || brand="${CLAUDE_BRAND_DIR:-none}"
   local branddir=""
   if [ "$brand" != "none" ]; then
-    if [ -d "$brand" ]; then branddir="$brand"; else branddir="$HOME/.claude/skills/cdc/assets/$brand"; fi
+    if [ -d "$brand" ]; then branddir="$brand"; else branddir="$root/assets/$brand"; fi
     if [ ! -d "$branddir" ]; then
       echo "render: kit brand introuvable: $branddir — rendu sans branding" >&2
       branddir=""
