@@ -15,19 +15,23 @@ function claude-project {
     else { Write-Host "Usage: claude-project <chemin-projet>" }
 }
 
+# Chemin du bash de Git. `bash` nu se resout vers celui de WSL sur cette machine
+# (Get-Command bash -All le liste en premier), qui n'a pas de distro installee.
+function Get-GitBash {
+    Join-Path (Split-Path (Split-Path (Get-Command git).Source)) "bin\bash.exe"
+}
+
 # Convertir un markdown en HTML autonome stylé (pandoc + thème doc-theme.css)
 # Usage : md2html [--open] <fichier.md> [sortie.html] [titre]
 function md2html {
-    bash "$HOME/.claude/tools/md2html.sh" @args
+    & (Get-GitBash) "$HOME/.claude/tools/md2html.sh" @args
 }
 
 # Audit du depot public avant push (noms de projets, chemins machine, identite, secrets)
 # Usage : audit-public
-# Passe par le bash de Git : `bash` nu se resout vers WSL sur cette machine.
 # Force le repertoire sur ~/.claude : le script lit `git ls-files`, donc auditerait
 # le mauvais depot s'il tournait ailleurs.
 function audit-public {
-    $gitBash = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) "bin\bash.exe"
     Push-Location "$HOME\.claude"
-    try { & $gitBash "tools/audit-public.sh" @args } finally { Pop-Location }
+    try { & (Get-GitBash) "tools/audit-public.sh" @args } finally { Pop-Location }
 }

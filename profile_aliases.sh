@@ -18,3 +18,11 @@ claude-project() {
     echo "Exemple: claude-project ~/code/mon-projet"
   fi
 }
+
+# Audit du dépôt public avant push (noms de projets, chemins machine, identité, secrets)
+# Usage : audit-public
+# Sous-shell : le script lit `git ls-files`, il auditerait le mauvais dépôt s'il
+# tournait ailleurs — et le cd ne doit pas fuir dans le shell appelant.
+audit-public() {
+  ( cd "$HOME/.claude" && bash tools/audit-public.sh "$@" )
+}
