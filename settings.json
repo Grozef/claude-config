@@ -1,0 +1,148 @@
+{
+  "cleanupPeriodDays": 2,
+  "env": {
+    "CLAUDE_TELEMETRY_OPTOUT": "1"
+  },
+  "includeCoAuthoredBy": false,
+  "model": "opus",
+  "skillOverrides": {
+    "dataviz": "user-invocable-only",
+    "artifact-design": "user-invocable-only",
+    "update-config": "user-invocable-only",
+    "keybindings-help": "user-invocable-only",
+    "verify": "user-invocable-only",
+    "code-review": "user-invocable-only",
+    "simplify": "user-invocable-only",
+    "fewer-permission-prompts": "user-invocable-only",
+    "loop": "user-invocable-only",
+    "schedule": "user-invocable-only",
+    "claude-api": "user-invocable-only",
+    "run": "user-invocable-only",
+    "init": "user-invocable-only",
+    "security-review": "user-invocable-only"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/session-start.js",
+            "statusMessage": "Chargement du contexte de session..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/pre-bash.sh",
+            "statusMessage": "Verification commande bash..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/pre-write.sh",
+            "statusMessage": "Verification avant ecriture..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/pre-edit-write.sh",
+            "statusMessage": "Verif never-assume (Read prealable)..."
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/pre-read.sh",
+            "statusMessage": "Verification taille fichier..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/post-write.sh",
+            "statusMessage": "Mise a jour .gitignore si necessaire...",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/post-bash.sh",
+            "statusMessage": "Detection content-editor...",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/user-prompt-submit.js",
+            "statusMessage": "Rappels never-assume..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-verify.sh",
+            "statusMessage": "Verif never-assume (post-livraison)..."
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/stop-counter.js",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-narrative.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-vault-sync.sh",
+            "statusMessage": "Sync vault Obsidian...",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-capture-reminder.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "autoUpdatesChannel": "latest",
+  "switchModelsOnFlag": false
+}

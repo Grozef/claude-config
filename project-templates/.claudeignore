@@ -1,0 +1,13 @@
+# Dossiers à ignorer lors des recherches Claude (Glob/Grep)
+node_modules/
+vendor/
+dist/
+build/
+.git/
+storage/logs/
+storage/framework/
+bootstrap/cache/
+coverage/
+.nyc_output/
+.cache/
+*.lock

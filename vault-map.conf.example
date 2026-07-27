@@ -1,0 +1,14 @@
+# Copier en vault-map.conf (non versionne) et adapter.
+#
+# Mapping dossier-de-travail -> nom du projet dans le vault, utilise par
+# hooks/stop-vault-sync.sh pour savoir ou synchroniser FICHE.md / INFRA.md /
+# SESSION.md. La cle est le basename du repertoire du projet (ou de son parent) ;
+# la valeur est le nom du dossier sous <vault>/projets/ et <vault>/sessions/.
+#
+# Plusieurs dossiers peuvent pointer vers le meme projet vault (front + back).
+# Sans entree correspondante, le hook ne fait rien.
+
+declare -A MAP=(
+  ["mon_projet"]="mon-projet"
+  ["mon_projet_back"]="mon-projet"
+)

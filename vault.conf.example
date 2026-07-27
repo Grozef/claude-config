@@ -1,0 +1,11 @@
+# Copier en vault.conf (non versionne) et adapter.
+#
+# CLAUDE_VAULT     : racine du vault Obsidian. Les hooks et skills y ecrivent
+#                    TODO.md, meta/, journal/, sessions/, projets/.
+#                    Si absent ou non defini, les hooks concernes sortent en silence.
+# CLAUDE_BRAND_DIR : dossier du kit de marque pour tools/docx-brand.sh
+#                    (header1.xml, footer1.xml, header1.xml.rels, image1.png).
+#                    Optionnel — sans lui, docx-brand.sh refuse de tourner.
+
+CLAUDE_VAULT="/chemin/vers/mon-vault-obsidian"
+CLAUDE_BRAND_DIR="$CLAUDE_VAULT/claude/assets/brand"

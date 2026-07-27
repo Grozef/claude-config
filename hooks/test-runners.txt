@@ -1,0 +1,8 @@
+# Runners de test reconnus par le gate 2c (stop-verify.js), en plus des defauts integres.
+# 1 motif LITTERAL par ligne (sous-chaine de la commande Bash). # = commentaire.
+# Exemples a decommenter/adapter selon tes projets :
+# vendor/bin/phpunit
+# vendor/bin/pest
+# bin/phpunit
+# python -m pytest
+# ./gradlew test

@@ -1,0 +1,55 @@
+# ============================================================
+#  ~/.claude — .gitignore  (depot PUBLIC : Grozef/claude-config)
+#  Versionne : CLAUDE.md, hooks/, skills/, tools/, templates,
+#  settings.json, docs .md, fichiers *.example.
+#  Exclut : secrets, caches, transcripts, etat volatil, et tout
+#  contenu lie a des projets reels (-> depot prive du vault).
+# ============================================================
+
+# --- SECRETS / AUTH — NE JAMAIS COMMITTER ---
+/.credentials.json
+.credentials.json
+settings.local.json
+.claude/
+mcp-needs-auth-cache.json
+.last-update-result.json
+
+# --- Config locale machine (voir les *.example versionnes) ---
+vault.conf
+vault-map.conf
+
+# --- Contenu prive : projets reels -> depot prive du vault Obsidian ---
+projects/
+_archive/
+skills/cdc/assets/lab/
+
+# --- Etat perso de session (mirroite dans le vault) ---
+SESSION.md
+TODO.md
+plans/
+
+# --- Logs / etat volatil ---
+.no-verify.log
+.reminders.log
+.last-cleanup
+history.jsonl
+
+# --- Caches ---
+cache/
+stats-cache.json
+paste-cache/
+shell-snapshots/
+file-history/
+debug/
+daemon/
+ide/
+
+# --- Etat de session (PID / UUID, ephemere) ---
+sessions/
+session-env/
+
+# --- Sauvegardes locales ---
+backups/
+
+# --- Plugins installes (reinstallables) ---
+plugins/

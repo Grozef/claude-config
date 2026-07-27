@@ -1,0 +1,5 @@
+# Les hooks et tools sont executes par bash : un checkout en CRLF les casse
+# ("bad interpreter: /usr/bin/env bash^M"). On force LF partout, sauf PowerShell.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
