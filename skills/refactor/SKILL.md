@@ -7,23 +7,11 @@ description: |
 
 # Skill : Refactoring
 
-## Déclenchement
-Quand l'utilisateur demande de refactoriser, simplifier, réorganiser ou nettoyer du code.
+**Contexte requis** — si manquant, demander en une seule fois : le code source (collé ou fichier) ; l'objectif (lisibilité, performance, découplage) ; les contraintes (signature publique à garder ? compatibilité version ? tests existants ?).
 
-## Contexte requis avant d'agir
-Si manquant, demander en une seule fois :
-1. Le code source (coller ou indiquer le fichier)
-2. L'objectif du refactoring : lisibilité / performance / découplage / autre ?
-3. Contraintes : garder la signature publique ? compatibilité version ? tests existants à respecter ?
+**Interne, non affiché :** isoler les seuls blocs qui changent réellement ; ne rien restructurer hors du périmètre demandé ; conserver le style de nommage existant, sauf si c'est précisément ce qu'on corrige.
 
-## Processus interne (ne pas afficher)
-- Identifier les seuls blocs qui changent réellement
-- Ne pas restructurer ce qui n'est pas dans le scope demandé
-- Conserver le style de nommage existant sauf si c'est le problème à corriger
-
-## Format de sortie
-
-Uniquement les blocs modifiés :
+## Sortie — blocs modifiés uniquement
 
 ```php
 // fichier: path/to/File.php  ~ligne 45
@@ -35,14 +23,10 @@ public function refactoredMethod(Type $param): ReturnType
 }
 ```
 
-Si plusieurs emplacements modifiés, les séparer par `---`.
-
-Si un bloc est déplacé vers un nouveau fichier, indiquer :
-```
-// NOUVEAU fichier: path/to/NewService.php
-```
+Plusieurs emplacements : séparés par `---`. Bloc déplacé vers un nouveau fichier : l'annoncer par `// NOUVEAU fichier: path/to/NewService.php`.
 
 ## Règles
-- Jamais de code inchangé en sortie
-- Si le refactoring implique plus de 5 fichiers : demander confirmation du périmètre avant de continuer
-- Si une modification casse une interface publique : le signaler en `[ATTENTION]` avant le code
+
+- Jamais de code inchangé en sortie.
+- Plus de 5 fichiers touchés : demander confirmation du périmètre avant de continuer.
+- Rupture d'une interface publique : la signaler en `[ATTENTION]` AVANT le code.

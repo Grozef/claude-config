@@ -7,44 +7,20 @@ description: |
 
 # Skill : Rédaction littéraire
 
-## Déclenchement
-Quand l'utilisateur demande d'écrire, réécrire, reformuler, continuer ou corriger un texte littéraire, narratif, ou créatif.
+**Aiguillage :** si le projet courant a un dossier `creation/`, utiliser `/write-scene` à la place — il charge le BRIEF et PRINCIPES-ECRITURE. `/redac` est le skill des textes hors projet (one-shot, sans canon).
 
-**Aiguillage :** si le projet courant a un dossier `creation/` (projet littéraire structuré),
-utiliser `/write-scene` à la place — il charge le BRIEF et le référentiel PRINCIPES-ECRITURE.
-`/redac` reste le skill des textes hors projet (one-shot, sans canon).
+**Contexte requis** — si manquant, demander en une seule fois : genre et format (roman, nouvelle, scénario, article, lettre, poème) ; ton (registre, voix narrative, ambiance) ; contrainte de longueur ou de structure ; le texte source s'il s'agit d'une réécriture ou d'une continuation.
 
-## Contexte requis avant d'agir
-Si manquant, demander en une seule fois :
-1. Genre / format : roman, nouvelle, scénario, article, lettre, poème, autre ?
-2. Ton : registre formel/informel, voix narrative (1ère/3ème personne), ambiance (sombre, humoristique, lyrique...)
-3. Contrainte de longueur ou de format (nombre de mots, paragraphes, structure imposée ?)
-4. Si réécriture/continuation : fournir le texte source ou l'extrait précédent
+## Principes
 
-## Principes rédactionnels
+- **Prioritaire** : cohérence de voix (elle ne change pas en cours de production) ; show don't tell ; précision lexicale (le mot juste, pas le mot générique) ; rythme — longueur des phrases variée selon l'effet.
+- **Évité** : clichés narratifs sauf usage délibéré ; adverbes en `-ment` en excès ; verbes génériques (faire, avoir, être, mettre) quand un verbe précis existe ; résumé ou introduction avant le texte.
 
-### Ce qui est prioritaire
-- Cohérence de voix : la voix narrative ne change pas en cours de production
-- Show don't tell : préférer la scène à l'explication
-- Précision lexicale : mot juste plutôt que mot générique
-- Rythme : varier longueur des phrases selon l'effet voulu
+## Sortie
 
-### Ce qui est évité
-- Clichés narratifs sauf usage délibéré et justifié
-- Adverbes en `-ment` en excès
-- Verbes génériques (faire, avoir, être, mettre) quand un verbe précis existe
-- Résumé ou introduction du texte avant de le produire
+- Le texte directement, sans commentaire introductif ni conclusion.
+- Une seule variante : la meilleure au regard des contraintes.
+- Si un arbitrage narratif méritait une alternative : une ligne après le texte, préfixée `[Note]`.
+- **Correction d'un texte fourni** : uniquement les passages modifiés, en `[AVANT]` / `[APRÈS]`, sans commenter chaque correction sauf logique non évidente.
 
-## Format de sortie
-- Produire directement le texte, sans commentaire introductif ni conclusion
-- Si plusieurs variantes sont possibles : en produire une seule, la meilleure selon les contraintes
-- Si une décision narrative a été prise qui méritait une alternative : la signaler en **une ligne** après le texte, préfixée par `[Note]`
-
-## Corrections et reformulations
-- Si l'utilisateur fournit un texte à corriger : montrer uniquement les passages modifiés avec `[AVANT]` / `[APRÈS]`
-- Pas de commentaire sur chaque correction sauf si la logique est non évidente
-
-## Ce qui n'est pas inclus sauf si demandé
-- Analyse stylistique du texte produit
-- Alternatives ou variantes
-- Plan ou outline préalable
+Hors périmètre sauf demande explicite : analyse stylistique, variantes, plan préalable.
