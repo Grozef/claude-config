@@ -73,6 +73,16 @@
             "statusMessage": "Verification taille fichier..."
           }
         ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/pre-disk-sideeffect.sh",
+            "statusMessage": "Verif effet de bord disque..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -95,6 +105,17 @@
             "command": "bash ~/.claude/hooks/post-bash.sh",
             "statusMessage": "Detection content-editor...",
             "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/post-fail-vault.js",
+            "statusMessage": "Recherche vault sur cet echec..."
           }
         ]
       }
@@ -126,7 +147,7 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/stop-narrative.sh",
-            "async": true
+            "statusMessage": "Lint narratif (incoherences introduites)..."
           },
           {
             "type": "command",

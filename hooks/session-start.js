@@ -107,3 +107,26 @@ try {
     }
   }
 } catch (e) { /* compteur best-effort, ne jamais bloquer le demarrage */ }
+
+// Index des fiches meta/concepts/ : les SLUGS seuls, pas le contenu (~25 lignes pour
+// 111 fiches, contre ~700 lignes si on injectait les notes). Objectif : savoir qu'une
+// note EXISTE sur un sujet. Le contenu se lit a la demande avec Read.
+// Cause d'incident 2026-08-10 : interception TLS Cato rediagnostiquee de zero alors
+// que `cato-tls-interception` etait ecrite depuis le 2026-07-16 — rien ne signalait
+// son existence, donc rien ne declenchait sa lecture.
+try {
+  const VAULT = (require('./lib/vault-conf.js')()).CLAUDE_VAULT || '';
+  const dir = VAULT + '/meta/concepts';
+  if (VAULT && fs.existsSync(dir)) {
+    const slugs = fs.readdirSync(dir).filter(f => f.endsWith('.md')).map(f => f.slice(0, -3)).sort();
+    if (slugs.length) {
+      console.log('Concepts deja documentes (' + VAULT + '/meta/concepts/) — si un echec ou une question touche un de ces sujets, LIRE la fiche avant de rediagnostiquer :');
+      let line = ' ';
+      for (const s of slugs) {
+        if (line.length + s.length + 2 > 110) { console.log(line); line = ' '; }
+        line += ' ' + s;
+      }
+      if (line.trim()) console.log(line);
+    }
+  }
+} catch (e) { /* index best-effort */ }

@@ -6,6 +6,16 @@
 
 ---
 
+## 0. Rôle
+
+Auteur, pas assistant. La posture d'exécutant produit de la prose de service : correcte,
+plate, qui ne prend aucun risque et referme chaque scène proprement.
+
+- Priorité au sous-texte, au rapport de force et au rythme, avant l'information.
+- Un personnage a le droit d'avoir tort, de se taire, de ne pas comprendre, de ne pas céder.
+- Aucune scène ne se conclut sur sa propre morale.
+- Le manque narratif se SIGNALE à l'utilisateur ; il ne se comble jamais d'initiative.
+
 ## 1. Avant d'écrire — jamais hors-sol
 
 Cause racine n°1 des scènes rejetées : générer sans avoir lu le cadre réel.
@@ -56,6 +66,12 @@ Cause racine n°1 des scènes rejetées : générer sans avoir lu le cadre réel
   plaquée.
 - Show don't tell ; mot juste plutôt que générique ; éviter l'excès d'adverbes en -ment et
   les verbes pauvres (faire, avoir, être, mettre) quand un verbe précis existe.
+- Ce qui fait sonner faux un dialogue est catalogué dans `ANTI-TICS.md` (référentiel global,
+  adossé à des cas réels de corpus) : conflit résolu à la première concession, personnage qui
+  énonce la morale, acquiescement en série, bulle qui commente la précédente, inventaire
+  déguisé en sensoriel. Le crible s'applique en passe d'édition, pas pendant le jet.
+- Si le projet a un `creation/GOLDEN.md` (extraits validés par l'utilisateur), il PRIME sur
+  toute règle écrite : le corpus fait foi contre la doc.
 
 ## 5. NSFW — cadre non négociable
 
@@ -81,6 +97,17 @@ Cause racine n°1 des scènes rejetées : générer sans avoir lu le cadre réel
 
 Les passes 3-4-5 génèrent du dialogue : tous les choix narratifs ouverts doivent être
 validés avant de les lancer.
+
+**Ne pas confondre avec le pipeline de SCÈNE** (`/write-scene`), qui opère à l'intérieur
+d'une passe 4 ou 5 ci-dessus :
+
+1. CADRAGE — plan de beats (action, sous-texte, rapport de force, budget de bulles,
+   timestamp d'entrée, média). **Validation utilisateur obligatoire.**
+2. JET — rédaction beat par beat, jamais la scène entière d'un coup.
+3. ÉDITION — passe destructive contre ANTI-TICS + GOLDEN (`/polish-scene`). **Validation.**
+4. CONTINUITÉ — insertion, lint, mémo de continuité, mise à jour de l'état de session.
+
+Un jet unique sans passe d'édition est la cause dominante des scènes plates et incomplètes.
 
 ## 7. Authoring technique
 
