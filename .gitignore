@@ -53,3 +53,8 @@ backups/
 
 # --- Plugins installes (reinstallables) ---
 plugins/
+
+# Claude context files
+docs/documentation_claude/SESSION.md
+docs/documentation_claude/CONTEXT.md
+docs/documentation_claude/DECISIONS.md
