@@ -68,7 +68,7 @@ existe et est exécutable.
 
 Invocables en `/<nom>`.
 
-- Contexte de session : `session-start`, `checkpoint`, `context-update`, `summarize-session`, `clean-context`, `pre-task`
+- Contexte de session : `session-start`, `checkpoint`, `context-update`, `summarize-session`, `clean-context`
 - Code : `review`, `refactor`, `debug`, `gendoc`, `laravel`, `vue3ionic`, `linux`
 - Documentation : `cdc` (cahier des charges, 5 variantes), `update-fiche`
 - Vault : `todo`, `review-meta`

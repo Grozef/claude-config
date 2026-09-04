@@ -5,7 +5,7 @@
 alias haiku='claude --model claude-haiku-4-5-20251001'
 
 # Session Sonnet (défaut)
-alias claude-sonnet='claude --model claude-sonnet-4-6'
+alias claude-sonnet='claude --model claude-sonnet-5'
 
 # Ouvrir Claude Code dans un répertoire projet spécifique
 # Usage : claude-project /path/to/project

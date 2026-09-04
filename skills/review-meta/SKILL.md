@@ -1,8 +1,8 @@
 ---
 name: review-meta
 description: |
-  Revue periodique des 3 fichiers meta/ du vault Obsidian (erreurs, learnings, decisions-recurrentes). Detecte les doublons, les entrees obsoletes, les redondances. Propose archivage/consolidation. Inclut un TALLY de recurrence des causes-racines (tags [[...]]) pour cibler objectivement le prochain GATE a construire.
-  TRIGGER when: "review-meta", "audit meta", "consolide meta", "nettoie meta/", "archive meta", revue periodique du dossier meta/
+  Revue periodique des 3 fichiers meta/ du vault : doublons, entrees obsoletes, tally des causes-racines pour cibler le prochain gate, depouillement de .no-verify.log.
+  TRIGGER when: "review-meta", "audit meta", "consolide meta", "nettoie meta/"
 allowed-tools: Read, Edit, Write, Glob, Bash
 model: claude-haiku-4-5-20251001
 ---
@@ -34,6 +34,16 @@ model: claude-haiku-4-5-20251001
    `bash ~/.claude/tools/meta-tally.sh`
    (defaut : dossier vault + top 15 ; `meta-tally.sh <dossier> <topN>` pour ajuster). Le tool imprime : volumetrie par fichier, top causes-racines dans `erreurs.md` (signal de defaillance), top tags toutes sources. Ne PAS recompter les tags a la main — lire la sortie du tool. La cause-racine la plus frequente dans `erreurs.md` = candidate prioritaire pour le prochain GATE (cf. `stop-verify.js`, `cdc.sh`).
 
+2ter. **Dette de verification (`~/.claude/.no-verify.log`) :**
+   `awk -F'reason="' '{split($2,a,"\""); print a[1]}' ~/.claude/.no-verify.log | sort | uniq -c | sort -rn | head -10`
+   Chaque `[NO-VERIFY:]` est un aveu horodate, pas une dispense : le fichier n'etait relu par RIEN
+   jusqu'au 2026-09-04 (152 entrees accumulees). Regle : toute raison recurrente (>= 3 fois) ou toute
+   entree de plus de 7 jours devient un item `[op]` date dans `TODO.md` via `/todo add`, formule comme
+   la verification a faire (« produire la capture du globe », pas « revoir le NO-VERIFY »).
+   Cause : un `[NO-VERIFY: pas de capture du globe]` a ete recopie de checkpoint en checkpoint pendant
+   des semaines, faux des la recopie, sous lequel six livraisons ont ete annoncees vertes sur la
+   mauvaise page (`meta/erreurs.md`, 2026-08-27).
+
 3. **Rapport compact** au format :
 ```
 ## review-meta — YYYY-MM-DD
@@ -41,6 +51,9 @@ model: claude-haiku-4-5-20251001
 ### Recurrence (tally)
 - Top cause-racine erreurs.md : [[tag]] (N) — gate existant ? oui/non -> action
 - Classe non encore gatee la plus frequente : [[tag]] (N)
+
+### Dette de verification (.no-verify.log)
+- N bypass depuis la derniere revue, top raisons : ... -> M items [op] ouverts dans TODO.md
 
 ### erreurs.md
 - N entrees, X obsoletes (> 90j), Y doublons potentiels

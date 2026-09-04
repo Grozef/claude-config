@@ -1,9 +1,8 @@
 ---
 name: cdc
 description: |
-  Génère un cahier des charges (CDC) — 5 variantes via --type : fill (template à remplir + exemple démo), public (non technique), tech (technique), full (les deux, défaut), cdcf (fonctionnel normé NF EN 16271).
-  Détecte la source (repo/code = rétro, ou brief/doc = avant-projet). Sortie .md + .html (auto, tous types) ; --docx optionnel ; --no-html pour couper le HTML (pandoc simple).
-  TRIGGER when: "cahier des charges", "génère le CDC", "/cdc", "rédige les specs", "documente le besoin du projet"
+  Genere un cahier des charges (--type fill|public|tech|full|cdcf), en retro depuis un repo ou en avant-projet depuis un brief. Sortie .md + .html ; --docx pandoc brut en option.
+  TRIGGER when: "cahier des charges", "genere le CDC", "/cdc", "redige les specs"
 allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
@@ -14,7 +13,7 @@ allowed-tools: Read, Write, Glob, Grep, Bash
 
 ## Garde-fous (non négociables)
 
-1. **docx via pandoc simple uniquement.** Utiliser `~/.claude/tools/md2docx.sh` (pandoc, style par défaut). JAMAIS de Word COM, JAMAIS de reference-doc stylé (voie qui a brûlé 3 sessions, 2026-06-04/05). Après génération `--docx` : ouvrir le fichier pour constater le rendu (cf. feedback-cdc-approach règle 4). Sans `--docx`, on ne touche pas au Word.
+1. **docx via pandoc simple uniquement.** Utiliser `~/.claude/tools/md2docx.sh` (pandoc, style par défaut). JAMAIS de Word COM, JAMAIS de reference-doc stylé (voie qui a brûlé 3 sessions, 2026-06-04/05). Après génération `--docx` : ouvrir le fichier pour constater le rendu (cf. feedback-cdc-approach règle 4). Sans `--docx`, on ne touche pas au Word. Depuis le 2026-09-04, `--docx` produit du pandoc BRUT : la charte (header/footer via docx-brand.sh) ne s applique plus que sur `--brand <kit>` explicite, jamais par defaut.
 2. **Zéro exigence inventée.** Chaque ligne doit tracer vers une source réelle (code lu, doc fournie, réponse utilisateur). Toute info non dérivable -> `[À COMPLÉTER]` ou question, jamais d'hallucination ni de présomption.
 3. **La doc D'ABORD — interdiction de remplir sur des résumés.** Avant d'écrire une seule ligne, l'inventaire de doc de l'Étape 2.0 est OBLIGATOIRE pour CHAQUE source fournie. Remplir à partir des seuls `CONTEXT.md`/`README`/survol de code = supposition interdite (cause d'incident 2026-06-23 : demi-session perdue). Lire la doc réelle (`docs/`, `toDo/`, specs) ; le code ne fait que compléter. GATE déterministe : `cdc.sh inventory <repo>` — la sortie doit apparaître dans le contexte avant tout remplissage.
 4bis. **Tout CDC généré est gitignoré, jamais committé.** `cdc.sh` ajoute automatiquement `<out>.md/.html/.docx` au `.gitignore` du repo englobant (scaffold et render). Ne pas committer ces livrables ni retirer ces entrées.

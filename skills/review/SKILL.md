@@ -1,8 +1,8 @@
 ---
 name: review
 description: |
-  Revue de code token-efficiente. Issues uniquement, priorisees, localisees, classees par axe (clean/perf/refacto/bug/secu). Mode --diff (git diff), --full (audit systematique de toute l'app), --html (rapport navigateur).
-  TRIGGER when: "review", "diff-review", "audit complet", "revue complete", "review toute l'app", "regarde mon code", "c'est bon ce code ?", "review le diff", "verifie mes modifs"
+  Revue de code : issues seules, priorisees, localisees, classees par axe (clean/perf/refacto/bug/secu). Modes --diff, --full, --html.
+  TRIGGER when: "review", "audit complet", "regarde mon code", "review le diff", "verifie mes modifs"
 allowed-tools: Read, Bash, Glob, Grep
 ---
 

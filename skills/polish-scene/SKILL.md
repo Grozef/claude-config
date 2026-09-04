@@ -1,8 +1,8 @@
 ---
 name: polish-scene
 description: |
-  Passe d'edition impitoyable sur une scene deja redigee : reecrit le texte contre ANTI-TICS et les golden samples du projet, puis liste les coupes. C'est la PASSE 3 de /write-scene, utilisable seule sur un brouillon ou sur un chapitre deja insere (via l'aller-retour export-md / import-md).
-  TRIGGER when: "polish-scene", "polis la scene", "passe d'edition", "les dialogues sonnent faux", "reecris ce passage", "nettoie les tics", "ca fait ia"
+  Passe d'edition sur une scene deja redigee : reecriture contre ANTI-TICS et les golden samples, puis liste des coupes. Passe 3 de /write-scene, utilisable seule.
+  TRIGGER when: "polish-scene", "passe d'edition", "les dialogues sonnent faux", "ca fait ia"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

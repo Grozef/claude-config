@@ -1,8 +1,8 @@
 ---
 name: todo
 description: |
-  Gère le toDo global du vault Obsidian ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet. Organisé PAR PROJET (un titre ## par projet), chaque item porte un tag de type [op]/[idee]/[revue]. Ajoute, liste ou coche des items.
-  TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "liste le todo", "coche", "todo global", idée de projet à noter, revue à faire plus tard
+  Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done, organise par projet avec tags [op]/[idee]/[revue].
+  TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "coche", "todo global"
 allowed-tools: Read, Edit, Bash
 model: claude-haiku-4-5-20251001
 ---
