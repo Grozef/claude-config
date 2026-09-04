@@ -4,7 +4,7 @@ description: |
   Met a jour la note de fiche `projets/<nom>/<nom>.md` du projet courant dans le vault Obsidian en relisant le code source.
   TRIGGER when: "update-fiche", "mets a jour la fiche", apres un refactor ou changement d'archi, "la fiche est obsolete"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 # Skill : update-fiche

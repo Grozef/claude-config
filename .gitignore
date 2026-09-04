@@ -31,6 +31,7 @@ plans/
 # --- Logs / etat volatil ---
 .no-verify.log
 .reminders.log
+.pending-verify.log
 .last-cleanup
 history.jsonl
 

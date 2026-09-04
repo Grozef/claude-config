@@ -1,5 +1,5 @@
 // Stop async : rappel non bloquant si session substantielle sans capture meta/
-// Ecrit dans ~/.claude/.reminders.log -> inject-reminders.sh le lit au prochain UserPromptSubmit.
+// Ecrit dans ~/.claude/.reminders.log -> user-prompt-submit.js le lit et le vide au prochain prompt.
 // (stdout d'un hook async = invisible a l'utilisateur, confirme par doc Claude Code)
 
 const fs = require('fs');

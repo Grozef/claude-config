@@ -1,4 +1,8 @@
 #!/bin/bash
+# Garde de projet (2026-09-04) : ce hook est declare sur le Stop GLOBAL mais ne concerne
+# que les depots portant un corpus narratif. Sans cette sortie anticipee il lancait deux
+# commandes git a chaque fin de tour dans tous les projets, pour un resultat toujours nul.
+[ -d src/data/arcs ] || exit 0
 MODIFIED=$(git diff --name-only 2>/dev/null | grep -c "src/data/arcs/" 2>/dev/null)
 NEUFS=$(git status --porcelain -uall 2>/dev/null | grep -c "^?? src/data/arcs/.*\.ts" 2>/dev/null)
 TOUCHES=$(( MODIFIED + NEUFS ))

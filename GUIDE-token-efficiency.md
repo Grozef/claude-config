@@ -117,7 +117,6 @@ Les skills sont des commandes préconçues qui chargent uniquement ce dont elles
 | `/ask-haiku` | Question mécanique courte | 10-20x moins cher (modèle Haiku) |
 | `haiku "question"` | Même chose en ligne de commande | Idem |
 | `/quick [question]` | Confirmer une intuition en 3 lignes max | Évite une réponse longue non nécessaire |
-| `/pre-task [tâche]` | Liste les fichiers avant de les lire, demande confirmation | Évite les lectures en cascade |
 | `/diff-review` | Review basée sur `git diff` uniquement | 10x moins cher qu'une review de fichier complet |
 | `/audit-claude-md` | Vérifie que les CLAUDE.md < 30 lignes | Réduit le contexte chargé à chaque échange |
 
@@ -127,11 +126,7 @@ haiku "quel est le nom exact de la méthode qui gère l'auth dans Laravel Sanctu
 ```
 → Réponse immédiate, 10x moins cher qu'avec Sonnet.
 
-**Exemple d'usage de pre-task :**
-```
-/pre-task refactoriser le système de paiement
-```
-→ Claude liste les fichiers concernés et leur taille estimée, attend ta validation avant de lire.
+**Tâche multi-fichiers :** passer par le plan mode. Le skill `pre-task` a été supprimé le 2026-09-04 — demander l'autorisation de lire coûtait plus cher que les lectures évitées.
 
 **Exemple d'usage de diff-review :**
 ```
@@ -214,7 +209,7 @@ L'optimisation : les fichiers lourds (STYLE.md, SCENES.md) ne sont chargés que 
 - Choisir le bon modèle pour chaque tâche
 - Créer `.claudeignore` manuellement (déployé par `/context-update`)
 - Surveiller si DECISIONS.md grossit (le hook Stop le détecte et suggère `/clean-context`)
-- Penser à confirmer les fichiers lus avant une grosse tâche (utilise `/pre-task`)
+- Passer par le plan mode avant une grosse tâche multi-fichiers
 
 ---
 
@@ -228,7 +223,6 @@ L'optimisation : les fichiers lourds (STYLE.md, SCENES.md) ne sont chargés que 
 | `/summarize-session` | Fin de session longue |
 | `/compact` | Contexte trop lourd (suggéré auto après 15 réponses) |
 | `/clean-context` | DECISIONS.md trop volumineux (suggéré auto) |
-| `/pre-task` | Avant toute tâche multi-fichiers |
 | `/diff-review` | Review de ce qui vient d'être modifié |
 | `/audit-claude-md` | Vérifier que les CLAUDE.md restent légers |
 | `/ask-haiku` | Question factuelle courte |

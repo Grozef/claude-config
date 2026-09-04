@@ -85,9 +85,55 @@ run "bypass [NO-VERIFY:]            " "$TMP/byp" 0
 printf "$TXT\n" "Est-ce que ce fichier n'existe pas ?" > "$TMP/intr"
 run "garde-fou interrogatif         " "$TMP/intr" 0
 
+# --- Gate 2b elargi : completion affirmee avec des outils mais AUCUNE verif du tour ---
+USER='{"message":{"role":"user","content":[{"type":"text","text":"vas-y"}]}}'
+
+{ printf '%s\n' "$USER";
+  printf "$TUSE\n" "WebFetch" '{"url":"https://x"}';
+  printf "$TXT\n" "Voila, c'est fait."; } > "$TMP/g2b2"
+run "2b completion, outil non-verif  " "$TMP/g2b2" 2
+
+{ printf '%s\n' "$USER";
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
+  printf "$TXT\n" "Voila, c'est fait."; } > "$TMP/g2b3"
+run "2b completion + Read (passe)    " "$TMP/g2b3" 0
+
+# --- Gate 2g : succes silencieux (drapeau .pending-verify.log) ---
+PEND="$HOME/.claude/.pending-verify.log"
+flag() { printf '[2026-09-04T00:00:00Z] surface=%s quoi="%s" cmd="npm test" sortie="%s"\n' "$1" "$2" "$3" > "$PEND"; }
+
+flag ci "0 test execute" "Can t run because no spec files were found."
+printf "$TXT\n" "Les tests passent, on peut pousser." > "$TMP/g2g"
+{ printf '%s\n' "$USER"; printf "$TUSE\n" "Bash" '{"command":"npm test"}';
+  printf "$TXT\n" "Les tests passent, on peut pousser."; } > "$TMP/g2g"
+run "2g succes silencieux + 'vert'  " "$TMP/g2g" 2
+
+flag ci "0 test execute" "no spec files were found"
+{ printf '%s\n' "$USER"; printf "$TUSE\n" "Bash" '{"command":"npm test"}';
+  printf "$TXT\n" "La spec est exclue par excludeSpecPattern, je corrige le nom."; } > "$TMP/g2g2"
+run "2g drapeau sans annonce (passe) " "$TMP/g2g2" 0
+
+: > "$PEND"
+{ printf '%s\n' "$USER"; printf "$TUSE\n" "Bash" '{"command":"npm test"}';
+  printf "$TXT\n" "Les tests passent, on peut pousser."; } > "$TMP/g2g3"
+run "2g sans drapeau (passe)         " "$TMP/g2g3" 0
+
+# --- Bypass : doit NOMMER ce qui n a pas ete observe ---
+printf "$TXT\n" "C est fait. [NO-VERIFY:]" > "$TMP/byp2"
+run "bypass vide (bloque)            " "$TMP/byp2" 2
+
+# --- Bypass : ne couvre plus le gate 1 (production non regardee) ---
+{ printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
+  printf "$TXT\n" "C est fait. [NO-VERIFY: rendu visuel impossible ici]"; } > "$TMP/byp3"
+run "bypass ne couvre pas le gate 1  " "$TMP/byp3" 2
+
 # --- Cas neutre : texte sans affirmation ni prod -> passe ---
 printf "$TXT\n" "Voici les options possibles pour la suite." > "$TMP/neutre"
 run "neutre (aucune affirmation)    " "$TMP/neutre" 0
+
+# --- Couverture linguistique des regex (accents, formes flechies) ---
+if node "$HOME/.claude/hooks/test-regex.js" >/dev/null 2>&1; then echo "[OK]  regex : 0 angle mort (test-regex.js)"; pass=$((pass+1));
+else echo "[x]   regex : angle(s) mort(s) — node ~/.claude/hooks/test-regex.js"; fail=$((fail+1)); fi
 
 echo "== $pass OK / $((pass+fail)) cas =="
 [ "$fail" = 0 ] || exit 1

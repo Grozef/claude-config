@@ -44,9 +44,12 @@ scan() { # scan <libelle> <regex etendue>
 }
 
 # --- 2. noms de projets reels (derives du vault) ------------------------------
+# NB 2026-09-04 : `inspection` ajoute — le monorepo s'appelle Inspection, et le mot est un
+# nom commun francais ("commande d'inspection" dans les templates de creation). Le filtre est
+# un match EXACT sur le nom derive : les noms composes qui contiennent ce mot restent testes.
 # Allowlist : termes generiques de l'outillage qui apparaissent aussi comme nom de
 # dossier projet. Sans elle, des mots comme "fichiers" ou "cdc" noient les vrais hits.
-STOP='claude|obsidian|cdc|app|apps|back|front|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions'
+STOP='claude|obsidian|cdc|app|apps|back|front|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection'
 names=$( { [ -n "$vault" ] && ls -1 "$vault/projets" "$vault/sessions" 2>/dev/null
            ls -1 "$HOME/.claude/projects" 2>/dev/null | sed 's/.*-//'
          } | grep -v ':' | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]//g' \

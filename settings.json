@@ -31,6 +31,16 @@
             "statusMessage": "Chargement du contexte de session..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/tools/hooks-healthcheck.sh --static",
+            "statusMessage": "Controle des hooks declares...",
+            "async": true
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -104,6 +114,17 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/post-bash.sh",
             "statusMessage": "Detection content-editor...",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/post-bash-silent-fail.js",
+            "statusMessage": "Detection succes silencieux...",
             "async": true
           }
         ]

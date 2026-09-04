@@ -28,7 +28,7 @@ console.log('');
 console.log(B);
 
 if (hasSess) {
-  const proj = (fs.readFileSync(SESS, 'utf8').match(/Projet actif.*?:(.*)/)||[])[1] || '';
+  const proj = ((fs.readFileSync(SESS, 'utf8').match(/Projet actif.*?:(.*)/)||[])[1] || '').replace(/[*`_]/g, '');
   console.log(L('Session reprise \u2014 contexte charg\u00e9'));
   if (proj.trim()) console.log(L('Projet : ' + proj.trim()));
   if (missingAppClaude || missingJsClaude) console.log(L('\u26a0 CLAUDE.md locaux manquants \u2014 /context-update'));
@@ -108,25 +108,10 @@ try {
   }
 } catch (e) { /* compteur best-effort, ne jamais bloquer le demarrage */ }
 
-// Index des fiches meta/concepts/ : les SLUGS seuls, pas le contenu (~25 lignes pour
-// 111 fiches, contre ~700 lignes si on injectait les notes). Objectif : savoir qu'une
-// note EXISTE sur un sujet. Le contenu se lit a la demande avec Read.
-// Cause d'incident 2026-08-10 : interception TLS Cato rediagnostiquee de zero alors
-// que `cato-tls-interception` etait ecrite depuis le 2026-07-16 — rien ne signalait
-// son existence, donc rien ne declenchait sa lecture.
-try {
-  const VAULT = (require('./lib/vault-conf.js')()).CLAUDE_VAULT || '';
-  const dir = VAULT + '/meta/concepts';
-  if (VAULT && fs.existsSync(dir)) {
-    const slugs = fs.readdirSync(dir).filter(f => f.endsWith('.md')).map(f => f.slice(0, -3)).sort();
-    if (slugs.length) {
-      console.log('Concepts deja documentes (' + VAULT + '/meta/concepts/) — si un echec ou une question touche un de ces sujets, LIRE la fiche avant de rediagnostiquer :');
-      let line = ' ';
-      for (const s of slugs) {
-        if (line.length + s.length + 2 > 110) { console.log(line); line = ' '; }
-        line += ' ' + s;
-      }
-      if (line.trim()) console.log(line);
-    }
-  }
-} catch (e) { /* index best-effort */ }
+// Index des fiches meta/concepts/ RETIRE le 2026-09-04. Il injectait les 165 slugs a
+// chaque session (~3 750 caracteres, ~950 tokens) : un nom de fiche n'est ni un declencheur
+// ni une procedure, et la part de la classe d'erreur qu'il devait enrayer est passee de
+// 61 % a 83 % pendant qu'il tournait. Le rappel est desormais CIBLE et porte du CONTENU :
+// user-prompt-submit.js remonte les 2 notes proches de la demande avec extrait
+// (lib/vault-search.js), post-fail-vault.js fait de meme sur echec d'outil.
+// Code d'origine : git show c5a9ecd:hooks/session-start.js

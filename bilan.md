@@ -31,7 +31,7 @@
 | Alias | Usage |
 |-------|-------|
 | `haiku "question"` | claude-haiku pour tâches mécaniques |
-| `claude-sonnet` | claude-sonnet-4-6 |
+| `claude-sonnet` | claude-sonnet-5 |
 | `claude-project <path>` | Ouvre Claude dans le bon répertoire projet |
 
 ### Templates

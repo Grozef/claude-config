@@ -102,13 +102,13 @@ lint() {
 }
 
 render() {
-  local html=0 docx=0 open=0 brand="" file=""
+  local html=0 docx=0 open=0 brand="" file="" brand_explicite=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --html)  html=1; shift ;;
       --docx)  docx=1; shift ;;
       --open)  open=1; shift ;;
-      --brand) brand="${2:?--brand requiert un nom/dossier}"; shift 2 ;;
+      --brand) brand="${2:?--brand requiert un nom/dossier}"; brand_explicite=1; shift 2 ;;
       --no-brand) brand="none"; shift ;;
       *)       file="$1"; shift ;;
     esac
@@ -139,8 +139,11 @@ render() {
   if [ "$html" -eq 1 ]; then
     bash "$md2html" "${openflag[@]}" "${brandflag[@]}" "$file"
   fi
+  # Le docx sort en pandoc BRUT sauf --brand explicite (2026-09-04) : la mise en page
+  # Word est la voie qui a brule trois sessions les 2026-06-04/05, et CLAUDE.md ne
+  # tolere le docx que nu. Le branding HTML, lui, reste actif par defaut.
   if [ "$docx" -eq 1 ]; then
-    if [ -n "$branddir" ]; then
+    if [ -n "$branddir" ] && [ "$brand_explicite" -eq 1 ]; then
       # docx d'abord SANS ouvrir, puis injection header/footer, puis ouverture du brandé
       local dx; dx="$(bash "$md2docx" "$file")"
       bash "$HOME/.claude/tools/docx-brand.sh" --brand "$branddir" "$dx"

@@ -1,8 +1,8 @@
 ---
 name: write-scene
 description: |
-  Genere une scene narrative (SFW ou NSFW) pour le projet litteraire courant, en 4 passes validees : cadrage (plan de beats), jet acte par acte, edition anti-tics, continuite. Charge PRINCIPES-ECRITURE + ANTI-TICS (referentiels globaux) + creation/BRIEF.md, valide les arbitrages avant de generer, insere via l'outillage decrit dans la section Integration du BRIEF.
-  TRIGGER when: "ecris une scene", "genere la scene", "write-scene", "scene intime", "scene adulte", "scene NSFW", demande de contenu narratif pour un projet litteraire
+  Genere une scene narrative (SFW ou NSFW) en 4 passes validees : cadrage, jet acte par acte, edition anti-tics, continuite. Lit creation/BRIEF.md du projet.
+  TRIGGER when: "ecris une scene", "write-scene", "scene NSFW", demande de contenu narratif pour un projet litteraire
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

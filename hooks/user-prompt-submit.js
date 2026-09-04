@@ -1,9 +1,11 @@
 // UserPromptSubmit unifie : remplace inject-reminders + user-prompt + remind-verify + force-clarify
 // (4 spawns -> 1). Emet UN seul hookSpecificOutput.additionalContext concatene.
-// Anciens fichiers conserves pour rollback.
+// Les 4 anciens fichiers ont ete supprimes le 2026-09-04 (aucun n'etait declare depuis
+// l'unification) : leur code reste dans git, commit c5a9ecd.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { search } = require('./lib/vault-search.js');
 
 let prompt = '';
 try {
@@ -29,15 +31,38 @@ try {
   }
 } catch (e) {}
 
-// (2) Pointeur never-assume (toujours).
-parts.push("never-assume : verifie la source (Read/Grep/Bash) avant toute assertion ; negation d'existence -> jamais nue (scope explicite ou recherche home+www+Desktop). Gate Stop bloquant actif.");
+// (2) Pointeur vers les regles, PAS leur recitation : CLAUDE.md est deja en contexte
+// pour la session entiere, et 8 gates bloquants les appliquent en fin de tour. Ce qui
+// justifie de garder une ligne : en session longue, les regles de tete de contexte
+// finissent ignorees (decision 2026-06-07) — un pointeur court suffit a les rappeler.
+parts.push('Regles CLAUDE.md actives : never-assume, nomme-l-artefact, surgical, clarify-first. Gates Stop bloquants (dont succes silencieux exit 0).');
 
 // (3) CLARIFY-FIRST si verbes de production detectes.
 const norm = prompt.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const PROD = /(ajoute|ajouter|fix|fixe|refactor|implement|corrige|corriger|modifie|modifier|debug|ecris|ecrire|cree |creer |reecris|nettoie|nettoyer|optimise|optimiser|migre |migrer|setup|configure|configurer|deploi|installe|installer|remplace|remplacer|supprime|supprimer|enleve|enlever|met a\s*jour|mets a\s*jour|update|integre|integrer|change la|change le|change les)/;
+// (3) CLARIFY-FIRST + SURGICAL : SUPPRIMES le 2026-09-04. Ils recitaient mot pour mot
+// trois sections de CLAUDE.md, deja chargees, pour 1 295 car a chaque prompt de
+// production — soit ~7 800 tokens cumules sur une session de 30 tours. Le pointeur (2)
+// les nomme ; les gates 2e (scope-creep) et 1 (production non verifiee) les appliquent.
+
+// (3c) RAPPEL VAULT CIBLE — sur prompt de production, les 2 notes du vault les plus
+// proches de la DEMANDE, avec extrait. Remplace l'index des 165 slugs que session-start.js
+// injectait a chaque session (~950 tokens, aucun contenu, aucune trajectoire changee).
+// Le rappel arrive AVANT la premiere commande : post-fail-vault.js, lui, ne se declenche
+// que sur un echec d'outil, or la classe dominante des erreurs du vault sort en exit 0.
 if (PROD.test(norm)) {
-  parts.push("PRODUCTION -> CLARIFY-FIRST : avant tout Edit/Write/Bash producteur, cite les fichiers lus pour le contexte et pose >=1 question si une info critique manque (forme de donnee, comportement, perimetre). Trivial (1 ligne, fichier deja lu) : cite juste le Read.");
-  parts.push("SURGICAL (Karpathy #3) : ne touche QUE ce que la demande impose. Interdit d'ameliorer/refactoriser/reformater le code adjacent non concerne, ou de supprimer du dead code preexistant (signale-le). Simplicite d'abord : code minimal, rien de speculatif. Chaque ligne modifiee doit tracer a la demande.");
+  try {
+    const hits = search(prompt, 2);
+    if (hits.length) {
+      const l = ['VAULT — deja ecrit la-dessus, lire avant de rediagnostiquer :'];
+      for (const h of hits) {
+        l.push('  ' + h.label + (h.label.includes('/concepts/') ? '' : ' :: ' + h.title) + '   [' + h.matched.join(' ') + ']');
+        if (h.excerpt) l.push('      ' + h.excerpt.slice(0, 110));
+      }
+      l.push('Si hors sujet, ignorer sans commentaire.');
+      parts.push(l.join('\n'));
+    }
+  } catch (e) { /* rappel best-effort : ne jamais casser la soumission du prompt */ }
 }
 
 // (3b) Mot-cle interrogatif `scope ?` (au meme titre que `artefact ?`) : l'utilisateur
