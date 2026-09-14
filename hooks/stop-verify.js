@@ -5,8 +5,11 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const noVerifyLog = path.join(os.homedir(), '.claude', '.no-verify.log');
-const pendingLog = path.join(os.homedir(), '.claude', '.pending-verify.log');
+// Chemins surchargeables (test-gates.sh) : la suite ecrivait ses bypass factices dans le log reel,
+// 33 lignes sur 186 le 2026-09-13, que /review-meta depouillait comme de vrais aveux.
+const noVerifyLog = process.env.CLAUDE_NOVERIFY_LOG || path.join(os.homedir(), '.claude', '.no-verify.log');
+const pendingLog = process.env.CLAUDE_PENDING_LOG || path.join(os.homedir(), '.claude', '.pending-verify.log');
+const blocksLog = process.env.CLAUDE_GATE_BLOCKS_LOG || path.join(os.homedir(), '.claude', '.gate-blocks.log');
 
 // Protocole de verification par surface (~/.claude/verification-protocol.md) : source
 // unique de "quel artefact pour quelle surface". Le message de blocage NOMME l'artefact
@@ -42,6 +45,16 @@ function clearPending() {
   try { if (fs.existsSync(pendingLog)) fs.writeFileSync(pendingLog, ''); } catch (e) {}
 }
 
+// Journal des BLOCAGES (2026-09-13). Seuls les bypass etaient traces : le taux de faux positifs
+// exige par la re-mesure du 2026-10-05 etait incalculable, les transcripts etant purges a 2 jours.
+function blocked(gate) {
+  try {
+    const claim = lastAssistantText.replace(/\s+/g, ' ').trim().slice(0, 120).replace(/"/g, "'");
+    fs.appendFileSync(blocksLog, `[${new Date().toISOString()}] gate=${gate} claim="${claim}"\n`);
+  } catch (e) {}
+  process.exit(2);
+}
+
 let input = '';
 try { input = fs.readFileSync(0, 'utf8'); } catch(e) { process.exit(0); }
 
@@ -51,29 +64,8 @@ try { j = JSON.parse(input); } catch(e) { process.exit(0); }
 const transcript = j.transcript_path || '';
 if (!transcript || !fs.existsSync(transcript)) process.exit(0);
 
-const isBashProducer = (cmd) => {
-  if (!cmd) return false;
-  const patterns = [
-    /\bgit\s+(commit|push|reset|checkout\s+--|rm\b|mv\b|merge|rebase|branch\s+-D|tag\s+-d)/,
-    /(^|[\s;&|])rm\s+/,
-    /(^|[\s;&|])mv\s+/,
-    /(^|[\s;&|])cp\s+/,
-    /(^|[\s;&|])mkdir\s+/,
-    /(^|[\s;&|])touch\s+/,
-    /(^|[\s;&|])chmod\s+/,
-    /(^|[\s;&|])chown\s+/,
-    /\bnpm\s+(install|i\b|update|uninstall|remove|run\s+build|run\s+deploy)/,
-    /\bcomposer\s+(install|require|remove|update)/,
-    /\bpip\s+(install|uninstall)/,
-    /\byarn\s+(add|remove|install)/,
-    /\bsed\s+-i\b/,
-    /(^|[\s;&|])tee\s+/,
-    />\s*(?!\/dev\/null)[^|&\s]/, // redirection vers un fichier reel ; exclut 2>/dev/null & co (suppression stderr, pas une prod)
-    /\bcurl\s+.*-X\s+(POST|PUT|DELETE|PATCH)/i,
-    /\bgh\s+(pr\s+(create|merge|close)|issue\s+(create|close))/,
-  ];
-  return patterns.some(p => p.test(cmd));
-};
+// Motifs partages avec pre-guard-outward.js (extraits le 2026-09-11).
+const { isBashProducer } = require('./lib/producer.js');
 
 const lines = fs.readFileSync(transcript, 'utf8').split('\n').filter(l => l.trim());
 const toolEvents = [];
@@ -89,9 +81,14 @@ for (const line of lines) {
   try {
     const e = JSON.parse(line);
     const content = e.message && e.message.content;
+    // Les prompts TAPES arrivent en content CHAINE (transcript reel du 2026-09-14), pas en tableau :
+    // la frontiere ne se declenchait jamais et les gates « ce tour » lisaient toute la session.
+    // Le feedback d'un hook Stop partage cette forme : il ne rouvre pas de tour.
+    const isPrompt = t => !e.isMeta && !/^Stop hook feedback/.test(t || '');
+    if (e.message && e.message.role === 'user' && typeof content === 'string' && isPrompt(content)) turnStart = toolEvents.length;
     if (!Array.isArray(content)) continue;
     const role = e.message.role;
-    if (role === 'user' && content.some(c => c && c.type === 'text')) turnStart = toolEvents.length;
+    if (role === 'user' && content.some(c => c && c.type === 'text' && isPrompt(c.text))) turnStart = toolEvents.length;
     for (const c of content) {
       if (c.type === 'tool_use') {
         let kind = 'verify';
@@ -99,17 +96,20 @@ for (const line of lines) {
         if (c.name === 'Edit' || c.name === 'Write' || c.name === 'NotebookEdit') {
           kind = 'produce';
           target = (c.input && c.input.file_path) || '';
-        } else if (c.name === 'Bash') {
+        } else if (c.name === 'Bash' || c.name === 'PowerShell') {
+          // PowerShell (2026-09-13) : 41 % des appels shell, jusque-la classes 'other', ni prod ni verif.
           const cmd = (c.input && c.input.command) || '';
           kind = isBashProducer(cmd) ? 'produce' : 'verify';
           target = cmd.slice(0, 80);
         } else if (['Read','Grep','Glob'].includes(c.name)) {
           kind = 'verify';
-          if (c.name === 'Read') target = (c.input && c.input.file_path) || '';
+          // Grep/Glob : chemin + motif, pour que le gate 2h reconnaisse la relecture d'un fichier nomme.
+          target = c.name === 'Read' ? ((c.input && c.input.file_path) || '')
+            : (((c.input && c.input.path) || '') + ' ' + ((c.input && c.input.pattern) || ''));
         } else {
           kind = 'other';
         }
-        toolEvents.push({ name: c.name, kind, target, full: (c.name === 'Bash' ? ((c.input && c.input.command) || '') : '') });
+        toolEvents.push({ name: c.name, kind, target, full: ((c.name === 'Bash' || c.name === 'PowerShell') ? ((c.input && c.input.command) || '') : '') });
       } else if (c.type === 'text' && role === 'assistant') {
         lastAssistantText = c.text || '';
       }
@@ -124,21 +124,25 @@ const turnEvents = toolEvents.slice(turnStart);
 // Depuis le 2026-09-04 le bypass vaut AVEU, pas dispense generale : il ne couvre plus le
 // gate 1 (production non verifiee) et exige une raison non vide. 152 bypass avaient ete
 // poses sans que rien ne les relise ; /review-meta les depouille desormais.
+// Une MENTION du marqueur entre backticks n'est ni un bypass ni un bypass vide (2026-09-14,
+// `.gate-blocks.log` 07:36 : citer le marqueur bloquait) -> tests sur le texte hors code inline.
+const sansCode = lastAssistantText.replace(/`[^`\n]*`/g, '');
 let bypass = false;
-if (/\[NO-VERIFY:/i.test(lastAssistantText)) {
+if (/\[NO-VERIFY:/i.test(sansCode)) {
   try {
-    const m = lastAssistantText.match(/\[NO-VERIFY:([^\]]*)\]/i);
+    const m = sansCode.match(/\[NO-VERIFY:([^\]]*)\]/i);
     const reason = (m && m[1] ? m[1].trim() : '').replace(/\s+/g, ' ');
     const claim = lastAssistantText.replace(/\s+/g, ' ').trim().slice(0, 180);
     fs.appendFileSync(noVerifyLog, `[${new Date().toISOString()}] reason="${reason}" claim="${claim}"\n`);
   } catch (e) {}
-  const raison = ((lastAssistantText.match(/\[NO-VERIFY:([^\]]*)\]/i) || [])[1] || '').trim();
+  const raison = ((sansCode.match(/\[NO-VERIFY:([^\]]*)\]/i) || [])[1] || '').trim();
   if (!raison) {
     process.stderr.write('[NO-VERIFY:] VIDE (hook never-assume) :\n'
       + 'Un bypass doit NOMMER ce que tu n as pas pu observer : [NO-VERIFY: <ce que je n ai pas vu>].\n'
       + 'Un marqueur nu est une dispense sans trace — c est ce qui a laisse passer six livraisons\n'
-      + 'vertes sur la mauvaise page (meta/erreurs.md, 2026-08-27).\n');
-    process.exit(2);
+      + 'vertes sur la mauvaise page (meta/erreurs.md, 2026-08-27).\n'
+      + 'Pour CITER le marqueur sans l utiliser, entoure-le de backticks.\n');
+    blocked('no-verify-vide');
   }
   bypass = true;
 }
@@ -171,12 +175,56 @@ Annoncer "fait/livre/done" sans avoir vu le resultat = violation never-assume.
 Bypass legitime : si verif impossible (changement purement declaratif, doc pure, etc.), inclus dans ta prochaine reponse le marqueur :
   [NO-VERIFY: <raison breve>]
 `);
-    process.exit(2);
+    blocked('1');
+  }
+}
+
+// --- Gate 2h : LIVRABLE ECRIT (.md) sans passe de reverification (TODO 197, 2026-09-14) ---
+// A chaque reverification demandee, des fautes etaient trouvees dans le TEXTE livre : attributions
+// de source, citations, chiffres. Les gates 1-2g ne les voient pas : ils controlent des mots-cles du
+// message final et la presence d'un outil. Exige (a) que chaque .md soit RELU apres sa derniere
+// ecriture du tour et (b) un bloc REVERIF en fin de message, une ligne "- affirmation -> artefact" par
+// affirmation de fait. Controle la FORME et l'ordre, pas la verite des lignes. Non neutralise par
+// [NO-VERIFY:] : une affirmation sans artefact s'ecrit DANS le bloc. Hors ~/.claude/plans/ (le plan
+// est relu par l'utilisateur a l'approbation). Angle mort assume : un .md ecrit par Bash/PowerShell.
+const isDeliverable = e => (e.name === 'Edit' || e.name === 'Write') && /\.md$/i.test(e.target)
+  && !/[\/\\]\.claude[\/\\]plans[\/\\]/i.test(e.target);
+// Chaque .md doit etre RELU apres SA derniere ecriture par un outil qui le nomme (Read du fichier,
+// Grep/Bash contenant son nom) : une verif sans rapport ne compte pas (transcript reel du 2026-09-14,
+// un Bash parallele qui ne lisait pas le fichier suffisait a passer).
+const normChemin = s => (s || '').replace(/\\/g, '/').toLowerCase();
+const derniereEcriture = new Map();
+turnEvents.forEach((e, i) => { if (isDeliverable(e)) derniereEcriture.set(normChemin(e.target), i); });
+if (derniereEcriture.size) {
+  const nonRelus = [...derniereEcriture].filter(([f, i]) => {
+    const base = f.split('/').pop();
+    return !turnEvents.slice(i + 1).some(e => e.kind === 'verify'
+      && (normChemin(e.target).includes(base) || normChemin(e.full).includes(base)));
+  }).map(([f]) => f);
+  const blocReverif = /^[ \t]*REVERIF\b[^\n]*\n(?:[ \t]*[-*][^\n]*->[^\n]*(?:\n|$))+/m.test(lastAssistantText);
+  if (nonRelus.length || !blocReverif) {
+    const fichiers = [...derniereEcriture.keys()];
+    const manque = [];
+    if (nonRelus.length) manque.push('non relu(s) apres leur derniere ecriture : ' + nonRelus.join(', '));
+    if (!blocReverif) manque.push('pas de bloc REVERIF en fin de message');
+    process.stderr.write('LIVRABLE ECRIT SANS PASSE DE REVERIFICATION (gate 2h, TODO 197) :\n'
+      + 'Fichier(s) .md produit(s) ce tour :\n' + fichiers.map(f => '  ' + f).join('\n') + '\n'
+      + 'Manque : ' + manque.join(' ; ') + '\n\n'
+      + 'Avant de livrer :\n'
+      + '  1. relire le fichier ECRIT et chaque source qu il cite (page brute, git, grep) : un resume\n'
+      + '     (WebFetch, sous-agent, memoire) n est pas une source ;\n'
+      + '  2. finir le message par :\n'
+      + '     REVERIF :\n'
+      + '     - <affirmation de fait du livrable ou du message> -> <artefact regarde et ce qu il montrait>\n'
+      + '     - <affirmation non prouvee> -> NO-VERIFY: <ce qui n a pas pu etre observe>\n'
+      + 'Une affirmation qui n a pas sa ligne se retire du livrable. [NO-VERIFY:] ne neutralise pas ce gate.\n'
+      + protocole('livrable-ecrit'));
+    blocked('2h');
   }
 }
 
 // Le bypass sert a affirmer SOUS RESERVE : il neutralise les gates d'assertion (2a-2g),
-// jamais le gate 1, qui porte sur une production reelle non regardee.
+// jamais les gates 1 et 2h, qui portent sur une production reelle non regardee.
 if (bypass) { clearPending(); process.exit(0); }
 
 // --- Gate 2 : AFFIRMATION non etayee dans le message final ---
@@ -196,7 +244,7 @@ const rootsUnion = new Set();
 let sawSearchTool = false;
 for (const e of toolEvents) {
   if (e.name === 'Glob') sawSearchTool = true;
-  if (e.name === 'Bash' && /\b(find|locate)\b|everything|es\.exe/i.test(e.full || '')) {
+  if ((e.name === 'Bash' || e.name === 'PowerShell') && /\b(find|locate)\b|everything|es\.exe/i.test(e.full || '')) {
     sawSearchTool = true;
     for (const r of rootList) if ((e.full || '').includes(r)) rootsUnion.add(r);
   }
@@ -220,11 +268,12 @@ Avant de conclure :
 
 Bypass si justifie : [NO-VERIFY: <raison breve>]
 ` + protocole('existence'));
-  process.exit(2);
+  blocked('2a');
 }
 
 // 2b. Completion affirmee SANS aucune action ni verif dans le tour.
-const DONE = /(?<![a-zà-ÿ0-9_])(c['’]est fait|c['’]est bon|(termin|livr|corrig|régl)ée?s?|(termin|livr|corrig|régl)és?|ça marche|opérationnel(le)?s?)(?![a-zà-ÿ0-9_])/i;
+// Anglais ajoute le 2026-09-11 : le 10/09, 3 messages finaux en anglais ont traverse tous les gates (meta/erreurs.md).
+const DONE = /(?<![a-zà-ÿ0-9_])(c['’]est fait|c['’]est bon|(termin|livr|corrig|régl)ée?s?|(termin|livr|corrig|régl)és?|ça marche|opérationnel(le)?s?|done|fixed|verified|completed|resolved|delivered|it works|works now)(?![a-zà-ÿ0-9_])/i;
 // Elargi le 2026-09-04 : la condition d'origine (toolEvents.length === 0) ne se declenchait
 // que sur un tour SANS AUCUN outil, cas rarissime. Le cas reel est un tour plein d'outils
 // dont aucun ne regarde le resultat -> on exige au moins une VERIF dans le tour courant.
@@ -236,12 +285,12 @@ Un build/checkpoint anterieur n'est pas une preuve de l'etat courant.
 Avant de conclure : lance une verif (Read/Grep/Bash de check) qui montre le resultat.
 Bypass si verif impossible : [NO-VERIFY: <raison breve>]
 ` + protocole('feature-runtime'));
-  process.exit(2);
+  blocked('2b');
 }
 
 // 2c. "Pret a push / CI vert / tests passent" SANS avoir lance la commande de test ce tour.
 // Sous-classe la plus chere et la plus gateable de proxy-vs-artefact-reel (incidents 2026-06-22).
-const GREEN = /\b(prêt[es]* (à|a|pour)\s+(le\s+)?push|prêt[es]* à pousser|bon pour (le\s+)?push|on peut pousser|CI\s+(vert|au vert|passe|est vert|green)|suite\s+(verte|au vert)|tests?\s+(passent|sont\s+verts?|au vert|OK\b)|tout\s+est\s+vert)\b/i;
+const GREEN = /\b(prêt[es]* (à|a|pour)\s+(le\s+)?push|prêt[es]* à pousser|bon pour (le\s+)?push|on peut pousser|CI\s+(vert|au vert|passe|est vert|green)|suite\s+(verte|au vert)|tests?\s+(passent|sont\s+verts?|au vert|OK\b)|tout\s+est\s+vert|ready to (push|merge|ship)|tests?\s+(pass|passed|passing|are\s+green)|all\s+green|(CI|pipeline|build)\s+(is\s+)?(green|passing|passes))\b/i;
 const TESTCMD = /\b(php artisan test|artisan test|phpunit|\bpest\b|npm (run )?test|npm t\b|yarn test|pnpm test|vitest|jest|cypress (run|open)|playwright|pytest|go test|cargo test|mvn (test|verify)|gradle test|\bctest\b)\b/i;
 const NODETEST = /\bnode\b[^\n]*test[^\n]*\.(?:c?js|mjs|ts)\b/i; // harnais node maison (ex: node test-X.js)
 // Runners supplementaires editables sans toucher au code (1 motif litteral par ligne, # = commentaire).
@@ -253,7 +302,7 @@ try {
     if (pats.length) extraTest = new RegExp(pats.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
   }
 } catch (e) {}
-const ranTests = turnEvents.some(e => e.name === 'Bash' &&
+const ranTests = turnEvents.some(e => (e.name === 'Bash' || e.name === 'PowerShell') &&
   (TESTCMD.test(e.full || '') || NODETEST.test(e.full || '') || (extraTest && extraTest.test(e.full || ''))));
 if (GREEN.test(assertText) && !ranTests) {
   process.stderr.write(`"PRET A PUSH / CI VERT" SANS RUN (hook never-assume) :
@@ -264,14 +313,14 @@ Avant de conclure : rejoue la commande EXACTE du runner (lire le .yml) depuis un
 (ex: php artisan test --parallel / npm test / cypress run), et constate le resultat.
 Bypass si run impossible ici : [NO-VERIFY: <raison breve>]
 ` + protocole('ci'));
-  process.exit(2);
+  blocked('2c');
 }
 
 // 2d. Rendu visuel affirme correct SANS avoir regarde l'image/le pixel ce tour (classe docx/navigateur).
 const VISUAL = /(?<![a-zà-ÿ0-9_])(rendu|affichage|mise en page|logo|visuel)(?![a-zà-ÿ0-9_])[^.?!\n]{0,60}(?<![a-zà-ÿ0-9_])(correct|conforme|bon|bonne|nickel|impeccable|(align|centr)ée?s?|(align|centr)és?|propre|entier|visible|bien ((plac|positionn|affich|align)ée?s?|(plac|positionn|affich|align)és?|rendu))(?![a-zà-ÿ0-9_])|s['’]affiche\s+(correctement|bien|comme attendu)/i;
 const sawImage = turnEvents.some(e =>
   (e.name === 'Read' && /\.(png|jpe?g|gif|webp|bmp|svg|pdf)$/i.test(e.target || '')) ||
-  (e.name === 'Bash' && /pdftoppm|screencapture|ExportAsFixedFormat|--screenshot|\.screenshot\(|import -window/i.test(e.full || '')));
+  ((e.name === 'Bash' || e.name === 'PowerShell') && /pdftoppm|screencapture|ExportAsFixedFormat|--screenshot|\.screenshot\(|import -window/i.test(e.full || '')));
 if (VISUAL.test(assertText) && !sawImage) {
   process.stderr.write(`RENDU VISUEL AFFIRME SANS L'AVOIR REGARDE (hook never-assume) :
 Tu affirmes qu'un rendu/logo/affichage est correct sans avoir lu d'image ce tour.
@@ -280,7 +329,7 @@ Une metrique (taille, position, "le shape existe") n'est PAS le rendu (cf docx 2
 Avant de conclure : produis l'image (pdftoppm -png / export PDF / screenshot) et Read-la.
 Bypass si verif visuelle impossible ici : [NO-VERIFY: <raison breve>]
 ` + protocole('visuel'));
-  process.exit(2);
+  blocked('2d');
 }
 
 // 2e. Aveu de SCOPE-CREEP (Karpathy #3 "surgical changes") : le message final admet un
@@ -306,7 +355,7 @@ Action attendue :
 
 Bypass si l'utilisateur a explicitement autorise ce changement : [NO-VERIFY: <raison breve>]
 `);
-  process.exit(2);
+  blocked('2e');
 }
 
 // --- Gate 2f : ASSERTION DE CAUSE/HISTORIQUE non etayee (recit-causal-invente, incident 2026-07-17) ---
@@ -316,7 +365,7 @@ Bypass si l'utilisateur a explicitement autorise ce changement : [NO-VERIFY: <ra
 // observe ce tour ("ce matin", "hier", "la veille", "la derniere session"). Legitime seulement si un
 // artefact date a ete consulte ce tour (git log/reflog/show/blame/whatchanged, ou stat/ls -l).
 const CAUSAL = /\b(ce matin|cet apr[eè]s-?midi|hier|la veille|avant-?hier|tout à l['’]heure|la derni[eè]re session|lors d['’]une (précédente|autre) session|dans une session (précédente|antérieure))\b/i;
-const sawHistoryArtifact = turnEvents.some(e => e.name === 'Bash' &&
+const sawHistoryArtifact = turnEvents.some(e => (e.name === 'Bash' || e.name === 'PowerShell') &&
   /\bgit\s+(log|reflog|show|blame|whatchanged)\b|(^|[\s;&|])stat\s|(^|[\s;&|])ls\s+-l/i.test(e.full || ''));
 if (CAUSAL.test(assertText) && !sawHistoryArtifact) {
   process.stderr.write(`ASSERTION DE CAUSE/HISTORIQUE NON ETAYEE (hook never-assume / recit-causal-invente) :
@@ -330,7 +379,7 @@ Avant de conclure :
 
 Bypass si l'artefact est impossible ici : [NO-VERIFY: <raison breve>]
 ` + protocole('etat-de-session'));
-  process.exit(2);
+  blocked('2f');
 }
 
 // --- Gate 2g : SUCCES SILENCIEUX signale ce tour, et pourtant tu annonces que c'est fait ---
@@ -350,7 +399,7 @@ if (pending.length && (DONE.test(assertText) || GREEN.test(assertText))) {
     + 'et constate un NOMBRE d unites traitees non nul.\n'
     + 'Bypass si faux positif : [NO-VERIFY: <pourquoi cette sortie est normale>]\n'
     + protocole(surface));
-  process.exit(2);
+  blocked('2g');
 }
 
 clearPending();

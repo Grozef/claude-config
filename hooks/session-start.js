@@ -18,7 +18,12 @@ const hasNarrative = !hasCreation && CTX_DIR === '.'
   ? fs.readdirSync('.').some(f => f.match(/\.(md|txt)$/i) && !['README.md','CLAUDE.md','SESSION.md','CONTEXT.md','DECISIONS.md'].includes(f))
   : false;
 const missingAppClaude = fs.existsSync('app') && !fs.existsSync('app/CLAUDE.md');
-const missingJsClaude = fs.existsSync('resources/js') && !fs.existsSync('resources/js/CLAUDE.md');
+// resources/js peut n'etre qu'un scaffold Laravel (app.js + bootstrap.js), le front vivant
+// dans un dossier a part — cas majoritaire sur les projets suivis. N'alerter que si du .vue
+// y vit reellement, sinon l'alerte est permanente et fausse (aucun CLAUDE.md n'y sera pose).
+const missingJsClaude = fs.existsSync('resources/js')
+  && fs.readdirSync('resources/js').some(f => f.endsWith('.vue'))
+  && !fs.existsSync('resources/js/CLAUDE.md');
 
 const B = '\u250c' + '\u2500'.repeat(49) + '\u2510';
 const E = '\u2514' + '\u2500'.repeat(49) + '\u2518';
@@ -29,10 +34,15 @@ console.log(B);
 
 if (hasSess) {
   const proj = ((fs.readFileSync(SESS, 'utf8').match(/Projet actif.*?:(.*)/)||[])[1] || '').replace(/[*`_]/g, '');
-  console.log(L('Session reprise \u2014 contexte charg\u00e9'));
+  // Un SESSION.md est un SOUVENIR, pas un etat (verification-protocol.md, etat-de-session) :
+  // "contexte charge" le faisait passer pour verifie. On affiche sa date (heure locale) a la place.
+  const mt = fs.statSync(SESS).mtime;
+  const d = new Date(mt - mt.getTimezoneOffset() * 60000).toISOString().slice(0, 16).replace('T', ' ');
+  console.log(L('SESSION.md = souvenir du ' + d));
+  console.log(L("A confronter a git status avant d'affirmer"));
   if (proj.trim()) console.log(L('Projet : ' + proj.trim()));
   if (missingAppClaude || missingJsClaude) console.log(L('\u26a0 CLAUDE.md locaux manquants \u2014 /context-update'));
-  console.log(L('/session-start pour le contexte complet'));
+  console.log(L('/context-update pour le contexte complet'));
 } else if (hasCreation) {
   console.log(L('Projet litt\u00e9raire d\u00e9tect\u00e9 (creation/ pr\u00e9sent)'));
   console.log(L('\u2192 /context-update pour initialiser le contexte'));
@@ -57,11 +67,11 @@ if (hasSess) {
   const sess = fs.readFileSync(SESS, 'utf8');
   const ls = sess.split('\n');
   if (ls.length <= 120) process.stdout.write(sess);
-  else process.stdout.write(ls.slice(0, 120).join('\n') + '\n[... SESSION.md tronque a 120 lignes — /session-start pour le reste]\n');
+  else process.stdout.write(ls.slice(0, 120).join('\n') + '\n[... SESSION.md tronque a 120 lignes — /context-update pour le reste]\n');
 }
 
 // Vault fiche injection DESACTIVEE — MEMORY.md contient deja le contexte projet.
-// Les fiches vault sont lues a la demande via /session-start ou /update-fiche.
+// Les fiches vault sont lues a la demande via /context-update ou /update-fiche.
 // Raison: eviter ~100 lignes de tokens dupliques au demarrage.
 
 // Compteur leger du TODO global (chemin ABSOLU, independant du projet courant)
@@ -78,7 +88,16 @@ try {
   if (VAULT && fs.existsSync(TODO)) {
     const lines = fs.readFileSync(TODO, 'utf8').split('\n');
     const counts = { op: 0, idee: 0, revue: 0 };
-    const base = require('path').basename(process.cwd()).toLowerCase();
+    // Correspondance dossier -> tag(s) : ~/.claude/todo-map.conf, la MEME table que
+    // tools/todo-project.sh. L'ancien rapprochement par prefixe du basename rendait une
+    // liste VIDE des que le nom du dossier et le tag divergeaient (separateur different,
+    // suffixe de depot) — et une liste vide se lit "rien a faire", soit exactement
+    // l'incident du 2026-07-05 que ce bloc doit empecher. Constate le 2026-09-08.
+    const pathMod = require('path');
+    const TMAP = require('./lib/todo-map.js')();
+    const here = pathMod.basename(process.cwd());
+    const parent = pathMod.basename(pathMod.dirname(process.cwd()));
+    const myTags = (TMAP[here] || TMAP[parent] || []).map(t => t.toLowerCase());
     const mine = [];
     // Format PAR PROJET (2026-07-15) : le type est un tag inline [op]/[idee]/[revue]
     // apres la case a cocher, pas un titre de section. On compte les items NON TERMINES :
@@ -88,9 +107,9 @@ try {
       if (!m) continue;
       const inProgress = m[1] === '~';
       counts[m[2]]++;
-      // tag [[x]] lie au projet courant si prefixe commun (monprojet <-> monprojet_back)
+      // tag [[x]] compare EN ENTIER aux tags declares pour ce dossier, jamais en prefixe
       const tags = [...l.matchAll(/\[\[([^\]]+)\]\]/g)].map(t => t[1].toLowerCase());
-      if (tags.some(t => base.startsWith(t) || t.startsWith(base))) {
+      if (myTags.length && tags.some(t => myTags.includes(t))) {
         mine.push((inProgress ? '[EN COURS] ' : '') + l.trim());
       }
     }
@@ -104,6 +123,11 @@ try {
         console.log('  ' + (item.length > 110 ? item.slice(0, 107) + '...' : item));
       }
       if (mine.length > 12) console.log('  (+' + (mine.length - 12) + ' autres — /todo list)');
+    }
+    // Pas de correspondance = le toDo projet n'a PAS ete consulte. Le dire, plutot que de
+    // laisser le silence passer pour "aucune tache" ([[degradation-silencieuse]]).
+    if (!myTags.length && (hasSess || fs.existsSync('.git'))) {
+      console.log("toDo projet NON charge : « " + here + " » n'a pas d'entree dans ~/.claude/todo-map.conf");
     }
   }
 } catch (e) { /* compteur best-effort, ne jamais bloquer le demarrage */ }

@@ -4,7 +4,6 @@ description: |
   Nettoie DECISIONS.md, CONTEXT.md et audite les CLAUDE.md du projet. Garde les fichiers de contexte legers.
   TRIGGER when: "clean-context", "audit-claude-md", "nettoie le contexte", "verifie les CLAUDE.md", DECISIONS.md > 50 lignes
 allowed-tools: Read, Edit, Bash
-model: claude-haiku-4-5-20251001
 ---
 
 # Skill : clean-context

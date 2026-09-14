@@ -1,8 +1,10 @@
 ---
 name: quick
-description: Réponse en 3 lignes max, sans explication. Pour confirmer une intuition à 80%.
+description: |
+  Réponse en 3 lignes max, sans explication. Pour confirmer une intuition à 80%.
   TRIGGER when: "quick", "réponse courte", "juste confirme", "oui ou non", "en 1 ligne"
   DO NOT TRIGGER when: tâche nécessitant du code ou une analyse
+effort: low
 ---
 
 # Skill : quick

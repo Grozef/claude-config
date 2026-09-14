@@ -32,7 +32,7 @@ try {
 } catch (e) {}
 
 // (2) Pointeur vers les regles, PAS leur recitation : CLAUDE.md est deja en contexte
-// pour la session entiere, et 8 gates bloquants les appliquent en fin de tour. Ce qui
+// pour la session entiere, et 9 gates bloquants les appliquent en fin de tour. Ce qui
 // justifie de garder une ligne : en session longue, les regles de tete de contexte
 // finissent ignorees (decision 2026-06-07) — un pointeur court suffit a les rappeler.
 parts.push('Regles CLAUDE.md actives : never-assume, nomme-l-artefact, surgical, clarify-first. Gates Stop bloquants (dont succes silencieux exit 0).');

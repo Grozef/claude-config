@@ -26,6 +26,8 @@ const cas = {
     ['C est terminé.', true], ['Voila, ça marche.', true], ['C est livré.', true],
     ["C'est fait.", true], ['C est réglé.', true], ['Le service est opérationnel.', true],
     ['Rien a signaler.', false], ['Je vais corriger ca demain.', false],
+    ['Done: the file names stay as you chose.', true], ['Everything is verified.', true],
+    ['Fixed.', true], ['It works now.', true], ['I will fix it next.', false],
   ],
   CREEP: [
     ["Au passage, j'en ai profité pour nettoyer.", true],
@@ -41,6 +43,7 @@ const cas = {
   GREEN: [
     ['Les tests passent.', true], ['CI vert.', true], ['Tout est vert.', true],
     ['Prête à pousser.', true], ['Je lance les tests.', false],
+    ['All tests pass.', true], ['Ready to push.', true], ['CI is green.', true], ['I will run the tests.', false],
   ],
   CAUSAL: [
     ['Je l ai staged ce matin.', true], ['Fait hier.', true],

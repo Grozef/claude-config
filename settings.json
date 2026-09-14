@@ -1,5 +1,5 @@
 {
-  "cleanupPeriodDays": 2,
+  "cleanupPeriodDays": 30,
   "env": {
     "CLAUDE_TELEMETRY_OPTOUT": "1"
   },
@@ -39,31 +39,17 @@
             "command": "bash ~/.claude/tools/hooks-healthcheck.sh --static",
             "statusMessage": "Controle des hooks declares...",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/tools/transcript-metrics.js --archive",
+            "statusMessage": "Archivage des transcripts...",
+            "async": true
           }
         ]
       }
     ],
     "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/pre-bash.sh",
-            "statusMessage": "Verification commande bash..."
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/pre-write.sh",
-            "statusMessage": "Verification avant ecriture..."
-          }
-        ]
-      },
       {
         "matcher": "Write|Edit",
         "hooks": [
@@ -71,16 +57,6 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/pre-edit-write.sh",
             "statusMessage": "Verif never-assume (Read prealable)..."
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/pre-read.sh",
-            "statusMessage": "Verification taille fichier..."
           }
         ]
       },
@@ -93,6 +69,16 @@
             "statusMessage": "Verif effet de bord disque..."
           }
         ]
+      },
+      {
+        "matcher": "Bash|PowerShell|Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/pre-guard-outward.js",
+            "statusMessage": "Garde push/PR + mode stop..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -103,17 +89,6 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/post-write.sh",
             "statusMessage": "Mise a jour .gitignore si necessaire...",
-            "async": true
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/post-bash.sh",
-            "statusMessage": "Detection content-editor...",
             "async": true
           }
         ]
@@ -159,11 +134,6 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/stop-verify.sh",
             "statusMessage": "Verif never-assume (post-livraison)..."
-          },
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/stop-counter.js",
-            "async": true
           },
           {
             "type": "command",

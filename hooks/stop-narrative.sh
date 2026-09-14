@@ -19,13 +19,6 @@ if [ "$TOUCHES" -gt 0 ]; then
       exit 2
     fi
   fi
-  echo "${TOUCHES} fichier(s) narratif(s) modifies -- /update-canon recommande"
 fi
-
-DEC=DECISIONS.md; [ -f documentation_claude/DECISIONS.md ] && DEC=documentation_claude/DECISIONS.md; [ -f docs/documentation_claude/DECISIONS.md ] && DEC=docs/documentation_claude/DECISIONS.md
-if [ -f "$DEC" ]; then
-  DLINES=$(wc -l < "$DEC" 2>/dev/null || echo 0)
-  if [ "$DLINES" -gt 50 ]; then
-    echo "WARNING: DECISIONS.md volumineux ($DLINES lignes) -- lance /clean-context pour alleger"
-  fi
-fi
+# Rappels stdout en exit 0 (/update-canon, DECISIONS.md > 50 lignes) retires le 2026-09-13 :
+# un hook Stop n'en livre pas le stdout au modele (doc hooks), ils n'avaient jamais ete lus.
