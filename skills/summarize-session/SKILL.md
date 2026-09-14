@@ -4,7 +4,7 @@ description: |
   Resume de fin de session ou log d'une decision ponctuelle. Ecrit dans DECISIONS.md.
   TRIGGER when: "summarize-session", "resume la session", "decision-log", "log cette decision", "note ce choix", fin de session
 allowed-tools: Read, Edit, Bash
-model: claude-haiku-4-5-20251001
+effort: low
 ---
 
 # Skill : summarize-session

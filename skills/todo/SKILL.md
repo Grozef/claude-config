@@ -4,7 +4,7 @@ description: |
   Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done, organise par projet avec tags [op]/[idee]/[revue].
   TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "coche", "todo global"
 allowed-tools: Read, Edit, Bash
-model: claude-haiku-4-5-20251001
+effort: low
 ---
 
 # Skill : todo

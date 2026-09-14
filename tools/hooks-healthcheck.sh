@@ -9,7 +9,7 @@ settings="$HOME/.claude/settings.json"
 
 # --- Mode --static : controle SANS EXECUTER (2026-09-04) ---
 # Le mode complet lance reellement chaque hook : post-write.sh touche le .gitignore du
-# projet, stop-counter.js incremente SESSION.md, stop-vault-sync.sh copie dans le vault.
+# projet, stop-vault-sync.sh copie dans le vault.
 # Il est donc inutilisable en automatique. Le mode statique ne resout que le SCRIPT vise
 # par chaque commande declaree et verifie qu il existe et qu il compile — ce qui couvre la
 # mort silencieuse constatee : un hook declare sur un fichier absent ou casse ne dit rien.

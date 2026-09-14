@@ -67,3 +67,9 @@ Regle d'usage : si l'artefact ne peut pas etre produit ici, ecrire
 - artefact: un comptage sur la POPULATION entiere, pas un echantillon, PLUS une contre-mesure : « j'ai corrige » et « j'ai vide » sont indiscernables sans temoin. Verifier aussi l'unicite de toutes les cles derivees cote consommateur.
 - commande: script qui compte les violations sur l'ensemble + mesure temoin avant/apres
 - contre-exemple: 2026-08-26 « Livrer en controlant un ECHANTILLON au lieu de la population » ; 2026-09-02 « 383 features sans id ont casse une cle v-for »
+
+## livrable-ecrit — note, TODO, doc, GUIDE livres en .md
+- declencheur: ecriture ou edition d'un fichier .md dans le tour, hors ~/.claude/plans/ (gate 2h)
+- artefact: le fichier RELU apres la derniere ecriture, et pour chaque affirmation de fait qu'il porte (citation, attribution de source, chiffre, « seul », « aucun ») la page brute, le grep ou le log qui la prouve. Un resume (WebFetch, sous-agent, memoire) n'est pas une source.
+- commande: Read/grep du livrable ; `curl -sL <url>.md | grep` pour une doc ; puis bloc `REVERIF :` en fin de message, une ligne `- affirmation -> artefact` (ou `-> NO-VERIFY: ...`)
+- contre-exemple: 2026-09-14 « Audit pratiques Opus 5 livre avec 3 affirmations reprises de resumes, dans le tour meme ou je capturais ce risque »

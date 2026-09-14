@@ -1,0 +1,18 @@
+# Copier en todo-map.conf (non versionne) et adapter.
+#
+# Correspondance dossier-de-travail -> tag(s) du TODO global, utilisee par
+# tools/todo-project.sh pour retrouver les items du projet courant.
+#
+# La cle est le basename du repertoire courant, ou celui de son parent si le
+# repertoire lui-meme n'a pas d'entree (front/, backend/, app/... d'un monorepo
+# tombent ainsi sur leur projet). La valeur est le ou les tags `[[...]]` du
+# TODO, separes par des espaces ; le tag est cherche EN ENTIER, jamais en prefixe.
+#
+# Sans entree, todo-project.sh le DIT au lieu de rendre une liste vide : une
+# absence de correspondance ne doit pas se lire comme une absence de taches.
+
+declare -A TODO_MAP=(
+  ["mon_projet"]="mon-projet"
+  ["mon_projet_back"]="mon-projet"
+  ["mon_monorepo"]="mon-projet autre-tag"
+)

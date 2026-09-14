@@ -4,7 +4,6 @@ description: |
   Revue periodique des 3 fichiers meta/ du vault : doublons, entrees obsoletes, tally des causes-racines pour cibler le prochain gate, depouillement de .no-verify.log.
   TRIGGER when: "review-meta", "audit meta", "consolide meta", "nettoie meta/"
 allowed-tools: Read, Edit, Write, Glob, Bash
-model: claude-haiku-4-5-20251001
 ---
 
 # Skill : review-meta
@@ -44,6 +43,11 @@ model: claude-haiku-4-5-20251001
    des semaines, faux des la recopie, sous lequel six livraisons ont ete annoncees vertes sur la
    mauvaise page (`meta/erreurs.md`, 2026-08-27).
 
+2quater. **Blocages des gates (`~/.claude/.gate-blocks.log`, alimente depuis le 2026-09-13) :**
+   `awk -F'gate=' '{split($2,a," "); print a[1]}' ~/.claude/.gate-blocks.log | sort | uniq -c | sort -rn`
+   Rapprocher chaque gate des bypass « faux positif » de `.no-verify.log` pour estimer son taux de faux
+   positifs. C'est la donnee qui tranche le sort du gate 1 a la re-mesure du 2026-10-05.
+
 3. **Rapport compact** au format :
 ```
 ## review-meta — YYYY-MM-DD
@@ -52,8 +56,9 @@ model: claude-haiku-4-5-20251001
 - Top cause-racine erreurs.md : [[tag]] (N) — gate existant ? oui/non -> action
 - Classe non encore gatee la plus frequente : [[tag]] (N)
 
-### Dette de verification (.no-verify.log)
+### Dette de verification (.no-verify.log + .gate-blocks.log)
 - N bypass depuis la derniere revue, top raisons : ... -> M items [op] ouverts dans TODO.md
+- Blocages par gate : gate=X (n, dont f faux positifs) ...
 
 ### erreurs.md
 - N entrees, X obsoletes (> 90j), Y doublons potentiels

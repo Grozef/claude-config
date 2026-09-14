@@ -1,10 +1,10 @@
 ---
 name: update-canon
-model: claude-haiku-4-5-20251001
 description: |
   Met à jour creation/CONTINUITE.md avec les nouveaux faits établis après une session d'écriture.
   TRIGGER when: "update-canon", "mets à jour le canon", "j'ai écrit une scène", fin de session d'écriture
 allowed-tools: Read, Edit, Glob, Grep, Bash
+effort: low
 ---
 
 # Skill : update-canon — `/update-canon [résumé]`

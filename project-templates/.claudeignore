@@ -6,6 +6,7 @@ build/
 .git/
 storage/logs/
 storage/framework/
+public/build/
 bootstrap/cache/
 coverage/
 .nyc_output/

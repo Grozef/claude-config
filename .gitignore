@@ -17,6 +17,7 @@ mcp-needs-auth-cache.json
 # --- Config locale machine (voir les *.example versionnes) ---
 vault.conf
 vault-map.conf
+todo-map.conf
 
 # --- Contenu prive : projets reels -> depot prive du vault Obsidian ---
 projects/
@@ -32,6 +33,7 @@ plans/
 .no-verify.log
 .reminders.log
 .pending-verify.log
+.gate-blocks.log
 .last-cleanup
 history.jsonl
 
