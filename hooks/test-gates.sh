@@ -172,8 +172,8 @@ run "2h Read AVANT l'ecriture seul   " "$TMP/g2h3" 2
   printf "$TXT\n" 'Fonction mise a jour.'; } > "$TMP/g2h4"
 run "2h code non .md (passe)         " "$TMP/g2h4" 0
 
-{ printf '%s\n' "$USER"; printf "$TUSE\n" "Write" '{"file_path":"C:/Users/moi/.claude/plans/p.md"}';
-  printf "$TUSE\n" "Read" '{"file_path":"C:/Users/moi/.claude/plans/p.md"}';
+{ printf '%s\n' "$USER"; printf "$TUSE\n" "Write" '{"file_path":"C:/x/.claude/plans/p.md"}';
+  printf "$TUSE\n" "Read" '{"file_path":"C:/x/.claude/plans/p.md"}';
   printf "$TXT\n" 'Plan redige.'; } > "$TMP/g2h5"
 run "2h fichier de plan (passe)      " "$TMP/g2h5" 0
 
