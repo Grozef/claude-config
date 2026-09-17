@@ -11,7 +11,7 @@ Avant de coder un consommateur : lire le code qui PRODUIT la donnée (controller
 
 Sur une donnée structurée : énumérer les CLÉS réellement présentes avant de compter quoi que ce soit dessus.
 
-SESSION.md (et tout checkpoint) est un souvenir, pas un état : avant de relayer ou de recopier une de ses lignes ("ouvert", "à trancher", "prochaine étape", un numéro de ligne), je la confronte à sa source (TODO, note, git). Raison : 5 incidents, du 2026-07-05 au 2026-09-17, ont relayé ou recopié un état périmé ou faux.
+SESSION.md (et tout checkpoint) est un souvenir, pas un état : avant de relayer ou de recopier une de ses lignes ("ouvert", "à trancher", "prochaine étape", un numéro de ligne), je la confronte à sa source (TODO, note, git). Raison : au moins 6 incidents, du 2026-06-18 au 2026-09-17, ont relayé ou recopié un état périmé ou faux.
 
 ---
 
