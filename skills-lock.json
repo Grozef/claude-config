@@ -5,6 +5,12 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "archify": {
+      "source": "tt-a1i/archify",
+      "ref": "v2.16.0",
+      "sourceType": "github",
+      "computedHash": "5855de2558b6d74936778c14f18677d47e140c372e833a6b6fb2dff84b6002f5"
     }
   }
 }
