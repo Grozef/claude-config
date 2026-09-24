@@ -1,14 +1,14 @@
 ---
 name: todo
 description: |
-  Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done, organise par projet avec tags [op]/[idee]/[revue].
-  TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "coche", "todo global"
+  Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done, organise par projet avec tags [op]/[idee]/[revue]. Option `local` : toDo du poste (~/.claude/TODO.md).
+  TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "coche", "todo global", "todo local"
 allowed-tools: Read, Edit, Bash
 effort: low
 ---
 
 # Skill : todo
-# Invocation : /todo [add|list|done] [args]
+# Invocation : /todo [add|list|done] [args]  ·  /todo local [add|list|done] [args]
 
 **Arguments fournis :** $ARGUMENTS
 
@@ -68,6 +68,22 @@ Coche le n-ième item NON coché du projet. Exemple : `/todo done projet-b 1`
 
 ### sans argument
 Équivaut à `list` (tous les projets).
+
+## Option `local` (premier argument = `local`)
+
+Cible `~/.claude/TODO.md` (toDo propre au poste, hors vault, hors dépôt) au lieu du toDo du vault.
+Fichier absent : le dire et s'arrêter, ne pas le créer. Sans `local`, tout ce qui précède s'applique inchangé.
+
+Structure : pas de blocs projet, deux sections `## A faire` et `## Fait`.
+Item : `- [ ] [type] (YYYY-MM-DD) texte` — `type` ∈ {essai, op, idee}, sans tag `[[projet]]`. Plus récent en haut.
+Même règle commune : Read avant tout Edit, confirmation en une ligne.
+
+- `local add <type> "<texte>"` : insérer l'item juste après la ligne `## A faire`. Confirmer : `Ajouté [local/op] : texte`.
+- `local list` (ou `local` seul) : items `- [ ]` de `## A faire`, numérotés à partir de 1, format `1. [op] (date) texte`.
+- `local done <n>` : retirer le n-ième item de `## A faire` et l'insérer juste après `## Fait`, `- [ ]` -> `- [x]`,
+  suffixe ` — fait YYYY-MM-DD`. Confirmer : `Fait [local] n : texte`.
+- Un essai (`[essai]`) lancé ou fini se trace aussi dans `$CLAUDE_VAULT/infra/pc-msi-essais-config.md` : le rappeler
+  dans la confirmation.
 
 ## Notes
 - Ne jamais réécrire tout le fichier : Edit ciblé uniquement (préserve frontmatter, index, ordre, `[x]`).

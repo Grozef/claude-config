@@ -132,6 +132,22 @@ try {
   }
 } catch (e) { /* compteur best-effort, ne jamais bloquer le demarrage */ }
 
+// toDo LOCAL du poste (~/.claude/TODO.md, hors depot) : absent = silence, donc sans effet
+// sur les postes qui n'en ont pas.
+try {
+  const LOCAL = require('path').join(__dirname, '..', 'TODO.md');
+  if (fs.existsSync(LOCAL)) {
+    const c = { essai: 0, op: 0, idee: 0 };
+    for (const l of fs.readFileSync(LOCAL, 'utf8').split('\n')) {
+      const m = l.match(/^\s*-\s*\[[ ~]\]\s*\[(essai|op|idee)\]/);
+      if (m) c[m[1]]++;
+    }
+    if (c.essai + c.op + c.idee > 0) {
+      console.log('toDo local (~/.claude/TODO.md) : ' + c.essai + ' essais | ' + c.op + ' op | ' + c.idee + ' idees');
+    }
+  }
+} catch (e) { /* best-effort */ }
+
 // Index des fiches meta/concepts/ RETIRE le 2026-09-04. Il injectait les 165 slugs a
 // chaque session (~3 750 caracteres, ~950 tokens) : un nom de fiche n'est ni un declencheur
 // ni une procedure, et la part de la classe d'erreur qu'il devait enrayer est passee de
