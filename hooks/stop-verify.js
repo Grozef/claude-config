@@ -116,6 +116,10 @@ for (const line of lines) {
     }
   } catch(err) {}
 }
+// Le message final n'est pas toujours ecrit dans le transcript quand le hook le lit : on jugeait
+// alors le texte PRECEDENT (REVERIF present refuse, constate le 2026-09-24). L'entree du hook
+// porte le message final dans last_assistant_message ; le transcript reste le repli.
+if (typeof j.last_assistant_message === 'string' && j.last_assistant_message) lastAssistantText = j.last_assistant_message;
 
 // Outils du TOUR COURANT : c'est sur eux que portent les gates 2b a 2g.
 const turnEvents = toolEvents.slice(turnStart);
