@@ -49,7 +49,7 @@ scan() { # scan <libelle> <regex etendue>
 # un match EXACT sur le nom derive : les noms composes qui contiennent ce mot restent testes.
 # Allowlist : termes generiques de l'outillage qui apparaissent aussi comme nom de
 # dossier projet. Sans elle, des mots comme "fichiers" ou "cdc" noient les vrais hits.
-STOP='claude|obsidian|cdc|app|apps|back|front|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection'
+STOP='claude|obsidian|cdc|app|apps|back|front|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection|vault'
 names=$( { [ -n "$vault" ] && ls -1 "$vault/projets" "$vault/sessions" 2>/dev/null
            ls -1 "$HOME/.claude/projects" 2>/dev/null | sed 's/.*-//'
          } | grep -v ':' | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]//g' \
