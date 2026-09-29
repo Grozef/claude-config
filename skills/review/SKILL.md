@@ -3,7 +3,7 @@ name: review
 description: |
   Revue de code : issues seules, priorisees, localisees, classees par axe (clean/perf/refacto/bug/secu). Modes --diff, --full, --html.
   TRIGGER when: "review", "audit complet", "regarde mon code", "review le diff", "verifie mes modifs"
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Glob, Grep, Edit
 ---
 
 # Skill : Review de code
@@ -144,3 +144,28 @@ bash ~/.claude/tools/review2html.sh --open "$base.html" "Audit complet — <app>
 ```
 Annoncer "audit COMPLET" uniquement si `manquants` est vide (never-assume). Sinon, dire combien
 restent et reprendre par une nouvelle phase.
+
+## Tracage (modes --html et --full uniquement ; une revue rendue dans le chat ne laisse rien)
+
+Raison : 2026-09-28, 57 fichiers de revue et recaps de fixes dans les repos, aucun cite dans sa fiche vault,
+recaps de fixes ecrits a la main dans 4 formats differents.
+
+1. Source des findings : `--full` = `$acc`. `--html` = `mkdir -p revue`, ecrire d'abord le texte canonique dans
+   `revue/review-<stamp>.txt` (meme `<stamp>` que le `.html`), puis `review2html.sh ... < ce fichier`.
+2. Recap de fixes `revue/fixes-<stamp>.md` (a cote du rapport ; ne jamais ecraser un recap existant) :
+   ```bash
+   mkdir -p revue; src=<fichier des findings>; fx="revue/fixes-<stamp>.md"
+   { echo "# Fixes — revue <stamp> — rapport : \`<chemin du .html>\`"; echo
+     echo "| ID | Gravite | Constat (fichier:ligne) | Statut | Commit |"; echo "|---|---|---|---|---|"
+     awk 'match($0,/^\[([A-Z]+)\]\[(CRITIQUE|WARN)\] +(.*)$/,m){n[m[1]]++; gsub(/[|]/,"\\|",m[3]);
+          printf "| %s-%02d | %s | %s | a faire | |\n", m[1], n[m[1]], m[2], m[3]}' "$src"; } > "$fx"
+   ```
+   CRITIQUE et WARN seulement (INFO reste dans le rapport). Statuts : `a faire` / `fait` / `refuse (raison)`.
+   Appliquer un fix = passer SA ligne a `fait` + hash du commit, dans la meme session.
+3. Vault (sauter si `$CLAUDE_VAULT` absent) : fiche `projets/<fiche>/<fiche>.md`, `<fiche>` trouvee
+   par le chemin du repo dans `## Projets (index + chemins)` de TODO.md (`Grep`). Section `## Revues`
+   (la creer avant le bloc final tags / « Voir aussi » si absente), une ligne par revue, la plus
+   recente en haut :
+   `- YYYY-MM-DD <diff|fichier|audit complet> <cible> : `<chemin absolu du .html>` — X CRITIQUE / Y WARN / Z INFO — fixes : `<chemin absolu du recap>` 0/N faits (YYYY-MM-DD)`
+   Compteurs = `grep -c` sur le fichier des findings, jamais de tete. Fiche absente : signaler et demander.
+   Ne jamais copier rapport ni recap dans le vault (ils listent des failles ; ils restent dans le repo).
