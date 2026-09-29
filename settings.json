@@ -156,5 +156,11 @@
     ]
   },
   "autoUpdatesChannel": "latest",
-  "switchModelsOnFlag": false
+  "switchModelsOnFlag": false,
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Bash(rm:docker/prod/*)"
+    ]
+  }
 }
