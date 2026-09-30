@@ -6,14 +6,17 @@
 [ -f "$HOME/.claude/vault.conf" ] && . "$HOME/.claude/vault.conf"
 
 pull_repo() {
-  local dir="$1" name="$2" out
+  local dir="$1" name="$2" out before
   [ -d "$dir/.git" ] || return 0
+  # HEAD avant/apres plutot que le texte de git, traduit selon la locale
+  before=$(git -C "$dir" rev-parse HEAD 2>/dev/null)
   out=$(timeout 20 git -C "$dir" pull 2>&1)
   if [ $? -eq 0 ]; then
-    case "$out" in
-      *"Already up to date"*) echo "git pull $name : a jour" ;;
-      *) echo "git pull $name : mis a jour -> $(git -C "$dir" log -1 --format='%h %s')" ;;
-    esac
+    if [ "$(git -C "$dir" rev-parse HEAD 2>/dev/null)" = "$before" ]; then
+      echo "git pull $name : a jour"
+    else
+      echo "git pull $name : mis a jour -> $(git -C "$dir" log -1 --format='%h %s')"
+    fi
     return 0
   fi
   [ -d "$dir/.git/rebase-merge" ] || [ -d "$dir/.git/rebase-apply" ] && git -C "$dir" rebase --abort >/dev/null 2>&1
