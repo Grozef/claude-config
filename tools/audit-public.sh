@@ -14,11 +14,18 @@ vault="${CLAUDE_VAULT:-}"
 
 files=$(git ls-files) || { echo "audit-public: pas un depot git" >&2; exit 1; }
 n=$(printf '%s\n' "$files" | wc -l)
+# Contenu tiers exclu des controles 2-5 (pas ecrit ici, faux positifs par centaines le
+# 2026-09-30 : noms de projets dans les licences, pseudo-IP et "token =" d'archify) : skills
+# vendorises de skills-lock.json et fichiers LICENSE*. Anti-troncature et index : tout.
+vendor=$(node -e 'try{console.log(Object.keys(require(process.cwd()+"/skills-lock.json").skills).join("|"))}catch(e){}' 2>/dev/null)
+excl='(^|/)LICENSE[^/]*$'
+[ -n "$vendor" ] && excl="$excl|^skills/($vendor)/"
+scanned=$(printf '%s\n' "$files" | grep -vE "$excl")
 fail=0
 ok=0
 say() { printf '[%s] %-22s %s\n' "$1" "$2" "$3"; [ "$1" = "OK" ] && ok=$((ok+1)) || fail=$((fail+1)); }
 
-echo "== AUDIT PRE-PUSH ($n fichiers indexes) =="
+echo "== AUDIT PRE-PUSH ($n fichiers indexes, $(printf '%s\n' "$scanned" | wc -l) scannes 2-5, tiers exclus : ${vendor:-aucun} + LICENSE*) =="
 
 # --- 1. anti-troncature -------------------------------------------------------
 # iconv //TRANSLIT s'arrete au premier caractere non convertible : sans -c il rend
@@ -39,7 +46,7 @@ scan() { # scan <libelle> <regex etendue>
   local label="$1" re="$2" hits=""
   while IFS= read -r f; do
     local r; r=$(flat "$f" | grep -inE "$re") && hits+=$(printf '%s\n' "$r" | sed "s#^#    $f:#")$'\n'
-  done <<< "$files"
+  done <<< "$scanned"
   if [ -n "$hits" ]; then say XX "$label" "hits :"; printf '%s' "$hits"; else say OK "$label" "0 hit"; fi
 }
 
@@ -49,7 +56,7 @@ scan() { # scan <libelle> <regex etendue>
 # un match EXACT sur le nom derive : les noms composes qui contiennent ce mot restent testes.
 # Allowlist : termes generiques de l'outillage qui apparaissent aussi comme nom de
 # dossier projet. Sans elle, des mots comme "fichiers" ou "cdc" noient les vrais hits.
-STOP='claude|obsidian|cdc|app|apps|back|front|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection|vault'
+STOP='claude|obsidian|cdc|app|apps|back|front|frontend|saved|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection|vault'
 names=$( { [ -n "$vault" ] && ls -1 "$vault/projets" "$vault/sessions" 2>/dev/null
            ls -1 "$HOME/.claude/projects" 2>/dev/null | sed 's/.*-//'
          } | grep -v ':' | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]//g' \
@@ -64,7 +71,7 @@ else
   hits=""
   while IFS= read -r f; do
     r=$(flat "$f" | grep -inE "$pat") && hits+=$(printf '%s\n' "$r" | sed "s#^#    $f:#")$'\n'
-  done <<< "$files"
+  done <<< "$scanned"
   if [ -n "$hits" ]; then say XX "noms de projets" "hits ($cnt noms testes) :"; printf '%s' "$hits"
   else say OK "noms de projets" "0 hit ($cnt noms testes)"; fi
 fi
