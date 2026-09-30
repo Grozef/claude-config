@@ -50,6 +50,7 @@ Câblés dans `settings.json`.
 
 | Hook | Événement | Rôle |
 |------|-----------|------|
+| `session-pull.sh` | SessionStart | `git pull` du vault et de `~/.claude` (timeout 20 s, rebase en conflit annulé), résultat injecté ; tourne en parallèle de `session-start.js` |
 | `session-start.js` | SessionStart | détecte le type de projet, injecte `SESSION.md`, affiche le compteur du toDo global et les items liés au projet courant |
 | `pre-edit-write.sh` | PreToolUse/Write\|Edit | **bloque** une modification de fichier non lu dans la session |
 | `post-write.sh` | PostToolUse/Write | met à jour le `.gitignore` du projet après création du trio de contexte |

@@ -27,6 +27,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash ~/.claude/hooks/session-pull.sh",
+            "statusMessage": "git pull vault + ~/.claude..."
+          },
+          {
+            "type": "command",
             "command": "node ~/.claude/hooks/session-start.js",
             "statusMessage": "Chargement du contexte de session..."
           }
