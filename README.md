@@ -86,7 +86,9 @@ vault — la source reste en place, c'est Claude Code qui la lit).
 `audit-public.sh` est à lancer avant tout push : il vérifie qu'aucun nom de projet réel,
 chemin machine, identité ou secret n'est indexé. La liste des noms recherchés est dérivée du
 vault à l'exécution, jamais écrite dans le dépôt. Il désaccentue les fichiers avant de les
-lire — sans ça, un nom accentué échappe à un motif non accentué.
+lire — sans ça, un nom accentué échappe à un motif non accentué. Le contenu tiers (skills
+listés dans `skills-lock.json`, fichiers `LICENSE*`) n'est pas scanné : il n'est pas écrit
+ici et ne produisait que des faux positifs. Sans `node`, rien n'est exclu et l'audit bloque.
 
 ### `project-templates/`, `creation-templates/`, `templates/`
 
