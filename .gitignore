@@ -63,3 +63,6 @@ docs/documentation_claude/CONTEXT.md
 docs/documentation_claude/DECISIONS.md
 state/
 __pycache__/
+
+# --- Skills synchronises depuis claude.ai (contenu Anthropic, regenere par la synchro) ---
+skills/synced/
