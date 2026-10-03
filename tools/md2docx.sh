@@ -26,7 +26,13 @@ fi
 
 mkdir -p "$(dirname "$out")"
 
+# Images relatives au .md (ex : diagrammes du skill cdc) : cherchées d'abord à côté du .md.
+# Séparateur de chemins pandoc : ';' sous Windows, ':' ailleurs.
+sep=":"; case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) sep=";" ;; esac
+respath="."; [ "$src" != "-" ] && respath="$(dirname "$src")${sep}."
+
 pandoc "$src" -o "$out" \
+  --resource-path "$respath" \
   --toc --toc-depth=3
 
 echo "$out"
