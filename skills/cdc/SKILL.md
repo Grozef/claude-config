@@ -1,13 +1,13 @@
 ---
 name: cdc
 description: |
-  Genere un cahier des charges (--type fill|public|tech|full|cdcf), en retro depuis un repo ou en avant-projet depuis un brief. Sortie .md + .html ; --docx pandoc brut en option.
+  Genere un cahier des charges (--type fill|public|tech|full|cdcf), en retro depuis un repo ou en avant-projet depuis un brief. Sortie .md + .html + .pdf, user stories derivees des parcours, diagrammes archify (tech/full) ; --docx pandoc brut en option.
   TRIGGER when: "cahier des charges", "genere le CDC", "/cdc", "redige les specs"
 allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
 # Skill : cdc
-# Invocation : /cdc [--type fill|public|tech|full|cdcf] [--no-html] [--docx] [chemin source | description du projet]
+# Invocation : /cdc [--type fill|public|tech|full|cdcf] [--no-html] [--no-pdf] [--no-diagrams] [--docx] [chemin source | description du projet]
 
 **Argument :** $ARGUMENTS
 
@@ -23,6 +23,8 @@ allowed-tools: Read, Write, Glob, Grep, Bash
 
 - `--type` : `fill` | `public` | `tech` | `full` | `cdcf`. Défaut = `full`.
 - HTML : généré par défaut pour TOUS les types. `--no-html` pour le couper (.md seul).
+- PDF : généré par défaut avec le HTML (depuis le .html, Chrome headless). `--no-pdf` pour le couper ; `--no-html` coupe aussi le PDF.
+- Diagrammes archify : par défaut pour `tech` et `full` (Étape 3bis). `--no-diagrams` pour les couper. Jamais pour `fill`, `public`, `cdcf`.
 - `--docx` : générer aussi le docx (opt-in).
 - Reste de `$ARGUMENTS` = chemin source ou description du projet.
 
@@ -69,15 +71,36 @@ Tout le déterministe passe par l'outil `~/.claude/tools/cdc.sh` (mapping type->
    - `public` : langage métier, zéro jargon (pas de stack/données/archi).
    - `tech` : dérivé code (rétro) + doc projet.
    - `full` : 2 parties (fonctionnel puis technique).
+   - User stories (`public` §6, `full` §1.6, `tech` §8) : une US par item de « Parcours et fonctionnalités » (public/full) ou de « Besoins fonctionnels » (tech), jamais d'US sans item source ni d'item sans US. Rôle = un acteur de la table Acteurs. `Dérivée de` cite l'item et sa source. Priorité MoSCoW et critères d'acceptation : seulement s'ils sont dans la source, sinon `[À COMPLÉTER]` (garde-fou n°2).
    - `cdcf` : exprimer le besoin en FONCTIONS (le QUOI), JAMAIS la solution technique (le COMMENT). Respecter l'enchaînement de la trame : bête à cornes -> environnement (pieuvre/EME) -> fonctions de service (FP/FC) -> caractérisation (critère/niveau/flexibilité) -> hiérarchisation -> contraintes.
 
 > Doc vierge sans dépenser de token modèle : `cdc.sh scaffold --type <type> --html --docx` produit directement le squelette structuré + ses conversions.
 
+## Étape 3bis — Diagrammes archify (`tech` / `full`, sauf `--no-diagrams`)
+
+Après le remplissage, avant le lint. Un diagramme ne se dessine QUE depuis des faits déjà écrits dans le CDC rempli (garde-fou n°2) : pas de faits -> pas de diagramme, et le dire dans la confirmation finale.
+
+| Diagramme (type archify) | Faits requis | Inséré sous |
+|---|---|---|
+| `architecture` | composants de la section Architecture / Stack | 2.1 (full) / 1. (tech) Architecture |
+| `workflow` (parcours principal) | items de Parcours (full) ou Besoins fonctionnels (tech) | 1.5 (full) / 7. (tech) |
+| `sequence` (UN flux clé) | endpoints de la table API | 2.4 (full) / 4. (tech) API et intégrations |
+| `lifecycle` (UNE entité à statut) | statuts réels (migration, enum, doc) | 2.3 (full) / 3. (tech) Modèle de données |
+
+Par diagramme (`<dir>` = dossier du .md, `<stem>` = son nom sans .md, `A=~/.claude/skills/archify`) :
+1. Écrire `<dir>/<stem>-diagrams/<nom>.json` en suivant le « Fast authoring path » de `$A/SKILL.md` (schéma + un exemple, `meta.quality_profile: "showcase"`, libellés dans la langue du CDC, `meta.locale` omis).
+2. `node $A/bin/archify.mjs validate <type> <json> --quality showcase --json`, réparer selon ses diagnostics, puis `node $A/bin/archify.mjs deliver <type> <json> <dir>/<stem>-diagrams/<nom>.html --quality showcase --json`. Exit != 0 -> ne pas insérer le diagramme, le signaler.
+3. `node ~/.claude/tools/archify-snap.mjs <dir>/<stem>-diagrams/<nom>.html <dir>/<stem>-diagrams/<nom>.png` (PNG du seul diagramme, thème clair).
+4. Lire le PNG (Read) pour constater le rendu, puis insérer sous la section : `![<Titre>](<stem>-diagrams/<nom>.png)` + ligne `[Version interactive](<stem>-diagrams/<nom>.html)`. Chemin relatif au .md : md2html/md2docx l'incluent (image embarquée dans le HTML, le PDF et le docx).
+
+Le dossier `<stem>-diagrams/` est gitignoré par `cdc.sh` (garde-fou 4bis).
+
 ## Étape 4 — Lint, conversions et confirmation
 
 1. GATE anti-dette : `bash ~/.claude/tools/cdc.sh lint <fichier>.md`. Le `render` le relance automatiquement, mais l'observer ici et corriger toute ligne signalée (garde-fou n°4) — ou justifier un faux positif — AVANT le rendu final.
-2. Rendu (HTML par défaut sauf `--no-html`, `--docx` si demandé) :
-   `bash ~/.claude/tools/cdc.sh render --html [--docx] --open <fichier>.md`
+2. Rendu (HTML + PDF par défaut sauf `--no-html` / `--no-pdf`, `--docx` si demandé) :
+   `bash ~/.claude/tools/cdc.sh render --html [--no-pdf] [--docx] --open <fichier>.md`
+   Constater le PDF : `pdfinfo <fichier>.pdf` (pages) puis `pdftoppm -png -r 60` et Read d'au moins la 1re page et d'une page à diagramme.
    (le tool lint puis appelle md2html.sh / md2docx.sh ; `--open` ouvre le .docx pour vérifier le rendu, cf. garde-fou n°1). Si `--no-html` ET pas de `--docx` : pas de rendu, le `.md` est le livrable.
 3. **Vault** (sauter si `$CLAUDE_VAULT` n'est pas défini) : référencer le CDC dans la fiche `projets/<fiche>/<fiche>.md`, `<fiche>` trouvée par le chemin du repo dans `## Projets (index + chemins)` de TODO.md (`Grep`). Section `## CDC` (la créer avant le bloc final tags / « Voir aussi » si absente), une ligne par CDC : `- v<version>[, <type>] (YYYY-MM-DD) : `<chemin absolu du .md>` (+ .html)` ; remplacer la ligne du même chemin si elle existe. Puis copier le CDC dans le vault : `bash ~/.claude/tools/rapatrie-livrables.sh --refresh <fiche>` (instantané daté sous `projets/<fiche>/livrables/` + ligne dans son `MANIFEST.md` ; décision du 2026-10-05 : un CDC gitignoré dans son repo ne vivait que sur un poste). Fiche absente : le signaler et demander. Raison : 2026-09-28, 7 CDC existants, un seul cité (en texte) dans sa fiche.
-4. Confirmation finale en une ligne : chemin(s) produit(s) `.md` + `.html` (+ `.docx` si demandé) + type + mode (rétro / avant-projet / hybride) + nombre de `[À COMPLÉTER]` + nombre de findings lint restants.
+4. Confirmation finale en une ligne : chemin(s) produit(s) `.md` + `.html` + `.pdf` (+ `.docx` si demandé) + type + mode (rétro / avant-projet / hybride) + nombre d'US + diagrammes insérés / non produits (et pourquoi) + nombre de `[À COMPLÉTER]` + nombre de findings lint restants.
