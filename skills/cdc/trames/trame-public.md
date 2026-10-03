@@ -37,17 +37,31 @@
 
 - [À COMPLÉTER — fonctionnalité décrite côté usage]
 
-## 6. Livrables
+## 6. User stories
+
+> Une US par item de « 5. Parcours et fonctionnalités », jamais d'US sans item source. Rôle = un acteur de la table Acteurs.
+> Format : En tant que [rôle], je veux [action], afin de [bénéfice]. Priorité MoSCoW : Must / Should / Could / Won't.
+
+### US-1 — [titre court]
+- En tant que [À COMPLÉTER], je veux [À COMPLÉTER], afin de [À COMPLÉTER].
+- Dérivée de : [À COMPLÉTER — item source + fichier]
+- Priorité : [À COMPLÉTER]
+- Critères d'acceptation :
+  - [ ] [À COMPLÉTER]
+
+<!-- Dupliquer le bloc US-n autant que nécessaire. -->
+
+## 7. Livrables
 
 - [À COMPLÉTER]
 
-## 7. Planning et budget
+## 8. Planning et budget
 
 | | |
 |---|---|
 | Échéances | [À COMPLÉTER] |
 | Budget | [À COMPLÉTER] |
 
-## 8. Critères d'acceptation
+## 9. Critères d'acceptation
 
 - [ ] [À COMPLÉTER — condition observable de réussite, sans terme technique]

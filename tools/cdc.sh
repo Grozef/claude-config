@@ -3,12 +3,14 @@
 # copie le squelette, et/ou convertit en html/docx. Le REMPLISSAGE du contenu reste au modèle.
 #
 # Usage :
-#   cdc.sh scaffold --type {fill|public|tech|full|cdcf} [--out <f.md>] [--force] [--html] [--docx] [--open]
+#   cdc.sh scaffold --type {fill|public|tech|full|cdcf} [--out <f.md>] [--force] [--html] [--docx] [--no-pdf] [--open]
 #       Copie la trame figée vers <f.md> (défaut: documentation_contractuelle/cahier-des-charges.md).
 #       --html/--docx : convertit immédiatement (cas "doc vierge structuré sans modèle").
 #       Refuse d'écraser un fichier existant sauf --force.
-#   cdc.sh render [--html] [--docx] [--open] [--brand <nom|dir>|--no-brand] <f.md>
+#   cdc.sh render [--html] [--docx] [--no-pdf] [--open] [--brand <nom|dir>|--no-brand] <f.md>
 #       Convertit un fichier déjà rempli (cas workflow : scaffold -> remplissage -> render).
+#       --html produit AUSSI le .pdf (Chrome/Edge headless print-to-pdf) sauf --no-pdf.
+#       Images relatives au .md (<stem>-diagrams/*.png) incluses (resource-path de md2html/md2docx).
 #       Lint anti-dette auto avant conversion (garde-fou n4).
 #       Branding : le kit $CLAUDE_BRAND_DIR (vault.conf) est appliqué PAR DÉFAUT s'il existe.
 #       --brand <nom|dir> pour un autre kit, --no-brand pour désactiver.
@@ -40,7 +42,7 @@ trame_for() {
 
 placeholder_count() { grep -c '\[À COMPLÉTER\]' "$1" 2>/dev/null || echo 0; }
 
-# Gitignore — tout CDC généré (.md/.html/.docx) ne doit JAMAIS être committé.
+# Gitignore — tout CDC généré (.md/.html/.docx/.pdf + <stem>-diagrams/) ne doit JAMAIS être committé.
 # Trouve le repo git englobant l'output et ajoute les entrées (idempotent).
 gitignore_out() {
   local md="$1" dir base repo rel stem ext entry gi added=0
@@ -56,10 +58,13 @@ gitignore_out() {
   base="$(basename "$md")"; stem="${base%.md}"
   gi="$repo/.gitignore"
   [ -f "$gi" ] || : > "$gi"
-  for ext in md html docx; do
-    entry="/${rel}${stem}.${ext}"
+  for ext in md html docx pdf diagrams/; do
+    case "$ext" in
+      */) entry="/${rel}${stem}-${ext}" ;;   # dossier des diagrammes archify
+      *)  entry="/${rel}${stem}.${ext}" ;;
+    esac
     if ! grep -qxF "$entry" "$gi" 2>/dev/null; then
-      [ "$added" -eq 0 ] && printf '\n# CDC généré (skill cdc) — ne pas committer\n' >> "$gi"
+      [ "$added" -eq 0 ] && ! grep -qF '# CDC généré (skill cdc)' "$gi" && printf '\n# CDC généré (skill cdc) — ne pas committer\n' >> "$gi"
       echo "$entry" >> "$gi"; added=1
     fi
   done
@@ -101,10 +106,37 @@ lint() {
   fi
 }
 
+# PDF depuis le HTML rendu, via Chrome/Edge headless (print-to-pdf, CSS @media print
+# de doc-theme.css). Chrome introuvable ou PDF absent -> erreur visible, jamais silencieuse.
+html2pdf() {
+  local html pdf chrome="" c profile
+  # Chemins absolus : Chrome résout un --print-to-pdf relatif hors du cwd (PDF perdu).
+  html="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; pdf="${html%.html}.pdf"
+  for c in "${ARCHIFY_CHROME:-}" \
+           "/c/Program Files/Google/Chrome/Application/chrome.exe" \
+           "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" \
+           "/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" \
+           "$(command -v google-chrome chromium 2>/dev/null | head -1)"; do
+    if [ -n "$c" ] && [ -x "$c" ]; then chrome="$c"; break; fi
+  done
+  [ -n "$chrome" ] || die "pdf: Chrome/Edge introuvable (définir ARCHIFY_CHROME), PDF non produit"
+  profile="$(mktemp -d)"
+  rm -f "$pdf"
+  "$chrome" --headless=new --disable-gpu --no-pdf-header-footer \
+    --user-data-dir="$(cygpath -w "$profile" 2>/dev/null || echo "$profile")" \
+    --print-to-pdf="$(cygpath -w "$pdf" 2>/dev/null || echo "$pdf")" \
+    "file:///$(cygpath -m "$html" 2>/dev/null || echo "$html")" \
+    >/dev/null 2>&1 || true
+  rm -rf "$profile" 2>/dev/null || true
+  [ -s "$pdf" ] || die "pdf: échec de print-to-pdf ($chrome), $pdf absent"
+  echo "$pdf"
+}
+
 render() {
-  local html=0 docx=0 open=0 brand="" file="" brand_explicite=0
+  local html=0 docx=0 open=0 pdf=1 brand="" file="" brand_explicite=0
   while [ $# -gt 0 ]; do
     case "$1" in
+      --no-pdf) pdf=0; shift ;;
       --html)  html=1; shift ;;
       --docx)  docx=1; shift ;;
       --open)  open=1; shift ;;
@@ -137,7 +169,10 @@ render() {
   local brandflag=(); [ -n "$branddir" ] && brandflag=(--brand "$branddir")
 
   if [ "$html" -eq 1 ]; then
-    bash "$md2html" "${openflag[@]}" "${brandflag[@]}" "$file"
+    local ht; ht="$(bash "$md2html" "${openflag[@]}" "${brandflag[@]}" "$file")"
+    echo "$ht"
+    # PDF par défaut avec le HTML (--no-pdf pour couper).
+    [ "$pdf" -eq 1 ] && html2pdf "$ht"
   fi
   # Le docx sort en pandoc BRUT sauf --brand explicite (2026-09-04) : la mise en page
   # Word est la voie qui a brule trois sessions les 2026-06-04/05, et CLAUDE.md ne
@@ -160,9 +195,10 @@ render() {
 cmd="${1:-}"; shift || true
 case "$cmd" in
   scaffold)
-    type=""; out="documentation_contractuelle/cahier-des-charges.md"; force=0; html=0; docx=0; open=0
+    type=""; out="documentation_contractuelle/cahier-des-charges.md"; force=0; html=0; docx=0; open=0; nopdf=0
     while [ $# -gt 0 ]; do
       case "$1" in
+        --no-pdf) nopdf=1; shift ;;
         --type) type="${2:?--type requiert une valeur}"; shift 2 ;;
         --out)  out="${2:?--out requiert une valeur}"; shift 2 ;;
         --force) force=1; shift ;;
@@ -185,6 +221,7 @@ case "$cmd" in
     rargs=("$out"); [ "$open" -eq 1 ] && rargs=(--open "${rargs[@]}")
     [ "$html" -eq 1 ] && rargs=(--html "${rargs[@]}")
     [ "$docx" -eq 1 ] && rargs=(--docx "${rargs[@]}")
+    [ "$nopdf" -eq 1 ] && rargs=(--no-pdf "${rargs[@]}")
     if [ "$html" -eq 1 ] || [ "$docx" -eq 1 ]; then render "${rargs[@]}"; fi
     ;;
   render)

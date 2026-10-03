@@ -40,6 +40,20 @@
 
 1. [À COMPLÉTER] (source : [À COMPLÉTER])
 
-## 8. Critères d'acceptation techniques
+## 8. User stories
+
+> Une US par item de « 7. Besoins fonctionnels », jamais d'US sans item source. Rôle = un acteur de la table Acteurs.
+> Format : En tant que [rôle], je veux [action], afin de [bénéfice]. Priorité MoSCoW : Must / Should / Could / Won't.
+
+### US-1 — [titre court]
+- En tant que [À COMPLÉTER], je veux [À COMPLÉTER], afin de [À COMPLÉTER].
+- Dérivée de : [À COMPLÉTER — item source + fichier]
+- Priorité : [À COMPLÉTER]
+- Critères d'acceptation :
+  - [ ] [À COMPLÉTER]
+
+<!-- Dupliquer le bloc US-n autant que nécessaire. -->
+
+## 9. Critères d'acceptation techniques
 
 - [ ] [À COMPLÉTER — testable : test automatisé, seuil mesurable, comportement vérifiable]
