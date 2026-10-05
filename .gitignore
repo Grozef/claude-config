@@ -45,6 +45,10 @@ shell-snapshots/
 file-history/
 debug/
 daemon/
+daemon.lock
+daemon.log
+daemon.status.json
+jobs/
 ide/
 
 # --- Etat de session (PID / UUID, ephemere) ---
