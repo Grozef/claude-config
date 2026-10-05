@@ -38,6 +38,16 @@ for (const line of lines) {
           metaEdits++;
         }
       }
+      // Capture ecrite par Bash (heredoc python / cat) : la commande nomme un journal ET porte
+      // un titre d'entree date en debut de ligne ou de chaine. Un grep/awk sur `^## 2026-...`
+      // ne compte pas. Mesure 2026-10-05 sur les transcripts du poste : 46 captures de ce
+      // type, aucune vue par le test Edit/Write.
+      if (c.type === 'tool_use' && c.name === 'Bash') {
+        const cmd = (c.input && c.input.command) || '';
+        if (/(erreurs|learnings|decisions-recurrentes)\.md/i.test(cmd) && /(^|[\n'"])## 20\d\d-\d\d-\d\d /.test(cmd)) {
+          metaEdits++;
+        }
+      }
     }
   } catch(err) {}
 }
