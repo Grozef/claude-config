@@ -76,7 +76,7 @@ Chemin : `$CLAUDE_VAULT`, défini dans `~/.claude/vault.conf` et injecté au dé
 
 - Ne pas injecter les fiches vault au démarrage — MEMORY.md suffit ; les fiches se lisent à la demande.
 - Le rappel du vault est automatique : les notes proches de la demande arrivent avec le prompt (`hooks/lib/vault-search.js`), et celles proches d'une erreur d'outil avec l'échec. Les lire avant de rediagnostiquer.
-- Journal dev : `journal/YYYY-MM-DD.md` en fin de session. Checkpoint : copie dans `sessions/<projet>/YYYY-MM-DD.md`.
+- Journal dev : `journal/YYYY-MM-DD.md`, écrit par `/checkpoint`. Checkpoint : copie dans `sessions/<projet>/YYYY-MM-DD.md`.
 
 ---
 
