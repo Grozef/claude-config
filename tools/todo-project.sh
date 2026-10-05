@@ -8,8 +8,10 @@
 # Constate le 2026-09-08 sur trois projets a la fois. Une liste vide se lisant
 # "rien a faire", c'est exactement l'incident que ce script est cense empecher.
 #
-# Correspondance dossier -> tag(s) : ~/.claude/todo-map.conf (non versionne,
-# voir todo-map.conf.example). Extrait dans un script pour que /context-update
+# Correspondance dossier -> tag(s), les MEMES sources que hooks/lib/todo-map.js, tags
+# additionnes : la carte partagee $CLAUDE_VAULT/claude/projets-map.conf (versionnee dans
+# le vault) et le complement local ~/.claude/todo-map.conf (optionnel, voir
+# todo-map.conf.example). Extrait dans un script pour que /context-update
 # n'ait pas de $(...) inline (le verificateur de permissions refuse la
 # substitution de commande dans les `!` du skill).
 
@@ -17,25 +19,27 @@
 TODO="${CLAUDE_VAULT:-}/TODO.md"
 [ -f "$TODO" ] || { echo "(TODO.md introuvable)"; exit 0; }
 
+SHARED="${CLAUDE_VAULT:-}/claude/projets-map.conf"
 MAPCONF="$HOME/.claude/todo-map.conf"
-if [ ! -f "$MAPCONF" ]; then
-  echo "(todo-map.conf absent — aucune correspondance dossier -> tag, le toDo projet n'est PAS charge ; copier todo-map.conf.example)"
+if [ ! -f "$SHARED" ] && [ ! -f "$MAPCONF" ]; then
+  echo "(ni claude/projets-map.conf dans le vault ni todo-map.conf local — aucune correspondance dossier -> tag, le toDo projet n'est PAS charge)"
   exit 0
 fi
-declare -A TODO_MAP=()
-. "$MAPCONF"
+declare -A PROJETS=() TODO_MAP=()
+[ -f "$SHARED" ] && . "$SHARED"
+[ -f "$MAPCONF" ] && . "$MAPCONF"
 
 # Dossier courant, puis son parent (front/, backend/, app/... d'un monorepo).
 here=$(basename "$PWD")
-tags="${TODO_MAP[$here]}"
-if [ -z "$tags" ]; then
+tags="${PROJETS[$here]} ${TODO_MAP[$here]}"
+if [ -z "${tags// /}" ]; then
   parent=$(basename "$(dirname "$PWD")")
-  tags="${TODO_MAP[$parent]}"
+  tags="${PROJETS[$parent]} ${TODO_MAP[$parent]}"
   here="$parent"
 fi
 
-if [ -z "$tags" ]; then
-  echo "(aucune correspondance pour « $(basename "$PWD") » dans todo-map.conf — le toDo projet n'est PAS charge, ce n'est pas une absence de taches)"
+if [ -z "${tags// /}" ]; then
+  echo "(aucune correspondance pour « $(basename "$PWD") » dans claude/projets-map.conf ni todo-map.conf — le toDo projet n'est PAS charge, ce n'est pas une absence de taches)"
   exit 0
 fi
 

@@ -7,8 +7,8 @@
 //     jamais rappeler la note.
 //
 // Selection par IDF : un terme present dans beaucoup de notes ne discrimine rien, un
-// terme rare designe la note. Pas de cache — ~460 Ko de markdown se lisent en quelques
-// ms et un index sur disque introduirait un bug de peremption.
+// terme rare designe la note. Pas de cache — ~960 Ko de markdown se lisent en 50 ms
+// (mesure 2026-10-05) et un index sur disque introduirait un bug de peremption.
 
 const fs = require('fs');
 const path = require('path');
@@ -41,7 +41,7 @@ const STOP = new Set([
 ]);
 
 // Journaux append-only : une note utile = une SECTION `## ...`, pas le fichier entier.
-const JOURNALS = /^(erreurs|learnings|decisions-recurrentes|archive-[0-9]{4})\.md$/;
+const JOURNALS = /^(erreurs|learnings|decisions-recurrentes|archive-(erreurs-)?[0-9]{4})\.md$/;
 // meta/ = memoire d'incident, infra/ + technos/ = etat et contraintes du parc.
 // tools/ est volontairement exclu : ce sont des docs de reference externes (git,
 // rspack, vscode) qui ne racontent aucun incident vecu et qui, testees le 2026-08-10,
@@ -88,6 +88,16 @@ function units(vault) {
       }
     }
   }
+  // Fiches projet : projets/<nom>/<nom>.md seulement, pas les docs du dossier. Sans elles,
+  // une demande qui porte sur un projet ne rappelait rien (mesure 2026-10-05, 30 prompts).
+  const proj = path.join(vault, 'projets');
+  let dirs = [];
+  try { dirs = fs.readdirSync(proj, { withFileTypes: true }).filter(e => e.isDirectory()); } catch (e) {}
+  for (const d of dirs) {
+    let raw;
+    try { raw = fs.readFileSync(path.join(proj, d.name, d.name + '.md'), 'utf8'); } catch (e) { continue; }
+    out.push({ label: 'projets/' + d.name + '/' + d.name + '.md', title: d.name, text: raw });
+  }
   return out;
 }
 
@@ -98,7 +108,11 @@ function excerpt(u) {
 
 // Rend au plus `max` unites, triees par score decroissant.
 // [{ label, title, matched: [termes], excerpt, score }]
-function search(text, max) {
+// minTerms : nombre minimal de termes apparies pour retenir une unite (defaut 1). Sur un
+// PROMPT, un seul mot francais banal mais rare dans le vault (« stocker », « veuille »)
+// pese 1/df = 1 et remontait une note sans rapport : user-prompt-submit.js passe 2.
+// Sur un message d'ERREUR, un token seul (port, code) designe souvent la note : 1.
+function search(text, max, minTerms) {
   const conf = require('./vault-conf.js')();
   const VAULT = conf.CLAUDE_VAULT || '';
   const wanted = terms(text || '');
@@ -129,13 +143,20 @@ function search(text, max) {
     // des termes generiques par accumulation et passait devant une fiche concept de
     // 400 octets qui, elle, parle exactement du sujet.
     score /= Math.max(1, Math.log10(u.text.length / 400));
-    if (score >= MIN_SCORE) {
+    // Un terme contenu dans un autre (« ajouter » / « rajouter ») s'apparie sur le MEME mot
+    // de la note : la paire ne compte que pour un terme.
+    const bag = [...present[i]];
+    const distinct = bag.filter(w => !bag.some(o => o !== w && o.includes(w))).length;
+    if (score >= MIN_SCORE && distinct >= (minTerms || 1)) {
       const matched = [...present[i]].sort((a, b) => df.get(a) - df.get(b)).slice(0, 4);
       scored.push({ label: u.label, title: u.title, matched, excerpt: excerpt(u), score });
     }
   });
 
-  scored.sort((a, b) => b.score - a.score);
+  // A score egal, le titre decroissant (les entrees de journal commencent par leur date :
+  // la plus recente d'abord). Sans ce departage, l'ordre dependait du fichier ou vit
+  // l'entree, donc de son archivage.
+  scored.sort((a, b) => b.score - a.score || (a.title < b.title ? 1 : a.title > b.title ? -1 : 0));
   return scored.slice(0, max || 3);
 }
 

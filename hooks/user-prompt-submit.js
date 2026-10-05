@@ -52,7 +52,7 @@ const PROD = /(ajoute|ajouter|fix|fixe|refactor|implement|corrige|corriger|modif
 // que sur un echec d'outil, or la classe dominante des erreurs du vault sort en exit 0.
 if (PROD.test(norm)) {
   try {
-    const hits = search(prompt, 2);
+    const hits = search(prompt, 2, 2);
     if (hits.length) {
       const l = ['VAULT — deja ecrit la-dessus, lire avant de rediagnostiquer :'];
       for (const h of hits) {

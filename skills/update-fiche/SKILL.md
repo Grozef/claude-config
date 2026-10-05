@@ -14,7 +14,7 @@ model: claude-sonnet-5
 
 ## Etapes
 
-1. **Identifier le projet** : determiner le nom vault depuis le CWD (table de mapping : `~/.claude/vault-map.conf`, non versionne).
+1. **Identifier le projet** : determiner le nom vault depuis le CWD (carte partagee `$CLAUDE_VAULT/claude/projets-map.conf` : cle = basename du CWD ou de son parent, nom vault = 1er mot de la valeur). Sans entree : le dire et demander, ne pas deviner.
 
 2. **Lire la fiche actuelle** : `$CLAUDE_VAULT/projets/<nom>/<nom>.md` (la convention vault = `<nom>.md`, PAS `FICHE.md` ; aucune fiche ne s'appelle `FICHE.md`). Note son frontmatter : `type`, `stack`, `deploy`, `status`, `tags`, `updated`.
 

@@ -32,7 +32,9 @@ for (const line of lines) {
       }
       if (c.type === 'tool_use' && (c.name === 'Edit' || c.name === 'Write')) {
         const fp = (c.input && c.input.file_path) || '';
-        if (/[\\\/]Obsidian[\\\/]meta[\\\/](erreurs|learnings|decisions-recurrentes)\.md$/i.test(fp)) {
+        // Le dossier du vault ne s'appelle pas pareil sur tous les postes : seul `meta/<journal>.md`
+        // est stable. Avec `Obsidian/meta/` en dur, aucune capture n'etait vue hors du poste d'origine.
+        if (/[\\\/]meta[\\\/](erreurs|learnings|decisions-recurrentes)\.md$/i.test(fp)) {
           metaEdits++;
         }
       }

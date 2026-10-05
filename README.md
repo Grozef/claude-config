@@ -56,7 +56,7 @@ Câblés dans `settings.json`.
 | `post-write.sh` | PostToolUse/Write | met à jour le `.gitignore` du projet après création du trio de contexte |
 | `user-prompt-submit.js` | UserPromptSubmit | rappel never-assume à chaque tour |
 | `stop-verify.js` / `.sh` | Stop | **bloque** une complétion affirmée sans tool, une négation d'existence non qualifiée, un aveu de scope-creep, un livrable `.md` sans passe de revérification (bloc `REVERIF`, gate 2h) |
-| `stop-vault-sync.sh` | Stop | synchronise fiche / infra / session vers le vault Obsidian |
+| `stop-vault-sync.sh` | Stop | synchronise fiche / infra vers le vault Obsidian |
 | `stop-capture-reminder.sh` | Stop | rappelle de consigner erreurs / learnings / décisions |
 | `test-gates.sh` | — | suite de tests des gates ci-dessus (`bash hooks/test-gates.sh`) |
 
@@ -81,7 +81,8 @@ Scripts appelés par les skills ou à la main : `cdc.sh`, `md2html.sh`, `md2docx
 `review-files.sh`, `review2html.sh`, `review2md.js`, `meta-tally.sh`, `todo-project.sh`,
 `hooks-healthcheck.sh`, `transcript-metrics.js` (tokens, outils et blocages lus dans les
 transcripts réels ; `--archive` les met à l'abri de la purge à 2 jours), `sync-memory-to-vault.sh` (sauvegarde la mémoire par projet dans le
-vault — la source reste en place, c'est Claude Code qui la lit).
+vault — la source reste en place, c'est Claude Code qui la lit), `rapatrie-livrables.sh` (copie
+datée dans le vault des CDC que les fiches référencent ; les revues restent dans leur repo).
 
 `audit-public.sh` est à lancer avant tout push : il vérifie qu'aucun nom de projet réel,
 chemin machine, identité ou secret n'est indexé. La liste des noms recherchés est dérivée du
@@ -120,9 +121,13 @@ declare -A MAP=(
 )
 ```
 
-`todo-map.conf` (non versionné) associe un dossier de travail au ou aux tags `[[...]]` de
-ce projet dans le toDo global, pour que `tools/todo-project.sh` et le bloc « toDo liés à CE
-projet » de `session-start.js` retrouvent ses items :
+`claude/projets-map.conf`, DANS le vault (donc versionné avec lui et partagé entre postes),
+associe un dossier de travail à son projet : `["mon_repo"]="ma-fiche autre-tag"`. Le premier
+mot est le dossier sous `projets/` (skill `update-fiche`), tous les mots sont les tags
+`[[...]]` du toDo global que `tools/todo-project.sh` et le bloc « toDo liés à CE projet » de
+`session-start.js` remontent.
+
+`todo-map.conf` (non versionné, optionnel) ajoute des tags propres au poste, au même format :
 
 ```sh
 declare -A TODO_MAP=(
