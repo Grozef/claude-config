@@ -223,6 +223,59 @@ run "marqueur cite ne dispense pas   " "$TMP/byp5" 2
   printf "$TXT\n" "C est fait. [NO-VERIFY: rendu visuel impossible ici]"; } > "$TMP/byp3"
 run "bypass ne couvre pas le gate 1  " "$TMP/byp3" 2
 
+# --- /dispatch (2026-10-05) : lot delegue = production ; SubagentStop juge le transcript de l'agent ---
+runj() { # label  entree_json_du_hook  expected_exit
+  printf '%s' "$2" | node "$HOOK" >/dev/null 2>&1
+  local c=$?
+  if [ "$c" = "$3" ]; then echo "[OK]  $1 (exit $c)"; pass=$((pass+1));
+  else echo "[x]   $1 (exit $c, ATTENDU $3)"; fail=$((fail+1)); fi
+}
+printf "$TUSE\n" "Agent" '{"subagent_type":"exec-code","prompt":"lot 1"}' > "$TMP/d1"
+run "1  lot delegue sans verif       " "$TMP/d1" 2
+
+{ printf "$TUSE\n" "Agent" '{"subagent_type":"exec-code","prompt":"lot 1"}';
+  printf "$TUSE\n" "Bash" '{"command":"git diff --stat"}'; } > "$TMP/d2"
+run "1  lot delegue + git diff       " "$TMP/d2" 0
+
+runj "1  executant encore en fond     " "{\"transcript_path\":\"$TMP/d1\",\"background_tasks\":[{\"id\":\"t1\",\"type\":\"subagent\",\"status\":\"running\"}]}" 0
+
+printf "$TUSE\n" "Agent" '{"subagent_type":"Explore","prompt":"cherche"}' > "$TMP/d4"
+run "1  agent de recherche (passe)   " "$TMP/d4" 0
+
+# Rapport rendu par SubagentHandback (forme reelle du 2026-10-05), last_assistant_message = cloture.
+{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "SubagentHandback" '{"message":"FICHIERS : /c/x.js"}'; } > "$TMP/d5"
+runj "SubagentStop : Edit sans verif  " "{\"transcript_path\":\"$TMP/d2\",\"agent_transcript_path\":\"$TMP/d5\",\"last_assistant_message\":\"ok\"}" 2
+
+{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "Bash" '{"command":"cat /c/x.js"}';
+  printf "$TUSE\n" "SubagentHandback" '{"message":"FICHIERS : /c/x.js"}'; } > "$TMP/d6"
+runj "SubagentStop : Edit + verif     " "{\"transcript_path\":\"$TMP/d1\",\"agent_transcript_path\":\"$TMP/d6\",\"last_assistant_message\":\"ok\"}" 0
+
+{ printf '%s\n' "$USTR"; printf "$TUSE\n" "SubagentHandback" '{"message":"Done, it works."}'; } > "$TMP/d7"
+runj "SubagentStop : rapport 'fait'   " "{\"transcript_path\":\"$TMP/d2\",\"agent_transcript_path\":\"$TMP/d7\",\"last_assistant_message\":\"ok\"}" 2
+
+# Forme REELLE d'un executant (sonde du 2026-10-05) : Read exige avant l'Edit, puis rapport direct.
+{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "SubagentHandback" '{"message":"FICHIERS : /c/x.js"}'; } > "$TMP/d8"
+runj "SubagentStop : Read AVANT l'Edit" "{\"transcript_path\":\"$TMP/d2\",\"agent_transcript_path\":\"$TMP/d8\",\"last_assistant_message\":\"\"}" 2
+
+{ printf "$TUSE\n" "Read" '{"file_path":"/c/plan.md"}';
+  printf "$TUSE\n" "Agent" '{"subagent_type":"exec-simple","prompt":"lot 1"}'; } > "$TMP/d9"
+run "1  lot delegue, verif AVANT seule" "$TMP/d9" 2
+
+# Le blocage qui CONTRAINT est celui de l'envoi du rapport (PreToolUse SubagentHandback) : en
+# SubagentStop le rapport est deja parti. Payload reel : transcript principal + agent_id, sans chemin d'agent.
+mkdir -p "$TMP/sess/subagents"; : > "$TMP/sess.jsonl"
+{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; } > "$TMP/sess/subagents/agent-zz.jsonl"
+HBK="\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"SubagentHandback\",\"transcript_path\":\"$TMP/sess.jsonl\",\"agent_id\":\"zz\",\"tool_input\":{\"message\":\"FICHIERS : /c/x.js\"}"
+runj "handback exec-* sans verif      " "{$HBK,\"agent_type\":\"exec-simple\"}" 2
+runj "handback autre agent (passe)    " "{$HBK,\"agent_type\":\"general-purpose\"}" 0
+printf "$TUSE\n" "Bash" '{"command":"cat /c/x.js"}' >> "$TMP/sess/subagents/agent-zz.jsonl"
+runj "handback exec-* apres verif     " "{$HBK,\"agent_type\":\"exec-simple\"}" 0
+
 # --- Cas neutre : texte sans affirmation ni prod -> passe ---
 printf "$TXT\n" "Voici les options possibles pour la suite." > "$TMP/neutre"
 run "neutre (aucune affirmation)    " "$TMP/neutre" 0

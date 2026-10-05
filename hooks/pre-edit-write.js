@@ -18,7 +18,12 @@ if (!fs.existsSync(file)) process.exit(0);
 const norm = s => (s || '').replace(/\\/g, '/').toLowerCase();
 const targetNorm = norm(file);
 
-const lines = fs.readFileSync(transcript, 'utf8').split('\n');
+// Dans un sous-agent, transcript_path reste celui de la session PRINCIPALE et le payload PreToolUse
+// ne porte pas agent_transcript_path (payload reel du 2026-10-05) : un Read fait par l'agent n'y est
+// pas, et tout Edit etait bloque a tort. Son transcript est <session>/subagents/agent-<agent_id>.jsonl.
+// Seul ce transcript compte alors : un Read de la session principale n'est pas un Read de l'agent.
+const agentTranscript = j.agent_id ? transcript.replace(/\.jsonl$/, '') + '/subagents/agent-' + j.agent_id + '.jsonl' : '';
+const lines = fs.readFileSync(agentTranscript && fs.existsSync(agentTranscript) ? agentTranscript : transcript, 'utf8').split('\n');
 for (const line of lines) {
   if (!line.trim()) continue;
   try {
@@ -27,7 +32,8 @@ for (const line of lines) {
     if (!Array.isArray(content)) continue;
     for (const c of content) {
       // "Fichier vu" = Read, Write (creation cette session), ou Edit precedent
-      if (c.type === 'tool_use' && ['Read','Write','Edit'].includes(c.name) && c.input && c.input.file_path) {
+      // L'appel en cours peut deja etre ecrit dans le transcript (sous-agent, 2026-10-05) : il ne se valide pas lui-meme.
+      if (c.type === 'tool_use' && c.id !== j.tool_use_id && ['Read','Write','Edit'].includes(c.name) && c.input && c.input.file_path) {
         if (norm(c.input.file_path) === targetNorm) process.exit(0);
       }
     }

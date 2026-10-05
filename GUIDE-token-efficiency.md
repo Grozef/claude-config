@@ -121,6 +121,15 @@ Session Haiku manuelle : `haiku.sh` ou l'alias `haiku` (`profile_aliases.sh`), p
 
 Les skills qui écrivent l'état de session (`checkpoint`, `todo`, `review-meta`…) ne forcent plus Haiku : un `model:` de skill vaut pour tout le reste du tour (doc skills), réponse finale comprise.
 
+#### Router un plan vers des modèles adaptés : `/dispatch`
+Mesure du 2026-10-05 (`tools/transcript-metrics.js`, 29 sessions) : 3995 appels Opus à 227,8k de contexte moyen ; la relecture du contexte en cache fait environ 60 % du coût pondéré. La lecture de cache coûte le même prix sur Opus 5.5 et Sonnet 5.5 (0,20 $/MTok), moitié moins sur Haiku : le gain d'une délégation vient d'abord du contexte neuf du sous-agent (26,6k par appel sur le lot de sonde), ensuite du prix de sortie.
+
+`/dispatch`, lancé à la main sur un plan approuvé, découpe en lots, confie les lots mécaniques à `exec-simple` (Haiku) et les lots de code bornés à `exec-code` (Sonnet), garde pour Opus ce qui demande une décision, et ne tient un lot pour fait qu'après avoir relancé lui-même sa commande d'acceptation. Un lot à risque (sécurité, auth, migration, données, suppression) passe en plus devant `relecteur`. En dessous de 3 lots délégables, il exécute directement.
+
+Un agent ajouté en cours de session n'est pas disponible tout de suite (constaté : refusé juste après création, disponible plus tard dans la même session). Le rapport d'un exécutant est refusé par `stop-verify.js` tant qu'aucune vérification ne suit sa dernière production. La ligne « par modèle » de `transcript-metrics.js` donne les appels, le contexte moyen et le coût pondéré de chaque modèle, sous-agents à part.
+
+Compteur d'économie : la section « ECONOMIE DE LA DELEGATION » du même outil compare, sur 30 et 180 jours glissants (`--periodes 30,180`), le coût réel au coût qu'auraient eu les appels des sous-agents s'ils avaient relu le contexte de la session principale. C'est une borne haute, pas une facture. Elle s'appuie sur `backups/usage.jsonl`, un journal d'une ligne par appel (date, session, modèle, quatre compteurs de tokens, aucun contenu de conversation) mis à jour à chaque démarrage de session par `--archive` : 800 Ko pour 4056 appels au 2026-10-05, là où l'archive des transcripts complets pèse 117 Mo. Le compteur tient donc 6 mois même si `backups/transcripts/` est vidé ; les autres sections de l'outil (outils, blocages) ont toujours besoin des transcripts.
+
 **Tâche multi-fichiers :** passer par le plan mode. Le skill `pre-task` a été supprimé le 2026-09-04 — demander l'autorisation de lire coûtait plus cher que les lectures évitées.
 
 #### Alléger les skills chargés au démarrage
