@@ -1,7 +1,8 @@
 {
   "cleanupPeriodDays": 30,
   "env": {
-    "CLAUDE_TELEMETRY_OPTOUT": "1"
+    "CLAUDE_TELEMETRY_OPTOUT": "1",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "3"
   },
   "includeCoAuthoredBy": false,
   "model": "opus",
@@ -84,6 +85,16 @@
             "statusMessage": "Garde push/PR + mode stop..."
           }
         ]
+      },
+      {
+        "matcher": "SubagentHandback",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-verify.sh",
+            "statusMessage": "Verif never-assume (rapport d'executant)..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -128,6 +139,18 @@
             "type": "command",
             "command": "node ~/.claude/hooks/user-prompt-submit.js",
             "statusMessage": "Rappels never-assume..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "exec-simple|exec-code",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-verify.sh",
+            "statusMessage": "Verif never-assume (lot delegue)..."
           }
         ]
       }

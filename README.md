@@ -52,10 +52,11 @@ Câblés dans `settings.json`.
 |------|-----------|------|
 | `session-pull.sh` | SessionStart | `git pull` du vault et de `~/.claude` (timeout 20 s, rebase en conflit annulé), résultat injecté ; tourne en parallèle de `session-start.js` |
 | `session-start.js` | SessionStart | détecte le type de projet, injecte `SESSION.md`, affiche le compteur du toDo global et les items liés au projet courant |
-| `pre-edit-write.sh` | PreToolUse/Write\|Edit | **bloque** une modification de fichier non lu dans la session |
+| `pre-edit-write.sh` | PreToolUse/Write\|Edit | **bloque** une modification de fichier non lu dans la session (dans un sous-agent : non lu par CET agent) |
 | `post-write.sh` | PostToolUse/Write | met à jour le `.gitignore` du projet après création du trio de contexte |
 | `user-prompt-submit.js` | UserPromptSubmit | rappel never-assume à chaque tour |
 | `stop-verify.js` / `.sh` | Stop | **bloque** une complétion affirmée sans tool, une négation d'existence non qualifiée, un aveu de scope-creep, un livrable `.md` sans passe de revérification (bloc `REVERIF`, gate 2h) |
+| `stop-verify.js` / `.sh` | PreToolUse/SubagentHandback | mêmes gates sur le transcript et le rapport d'un exécutant `exec-*` de `/dispatch` : **bloque** l'envoi du rapport tant qu'aucune vérification ne suit la dernière production. Aussi déclaré en SubagentStop, qui journalise mais arrive après l'envoi du rapport |
 | `stop-vault-sync.sh` | Stop | synchronise fiche / infra vers le vault Obsidian |
 | `stop-capture-reminder.sh` | Stop | rappelle de consigner erreurs / learnings / décisions |
 | `test-gates.sh` | — | suite de tests des gates ci-dessus (`bash hooks/test-gates.sh`) |
@@ -73,6 +74,17 @@ Invocables en `/<nom>`.
 - Vault : `todo`, `review-meta`
 - Écriture : `redac`, `write-scene`, `review-scene`, `update-brief`, `update-canon`, `init-creation`
 - Divers : `quick`
+- Exécution d'un plan : `dispatch` (manuel uniquement ; découpe un plan approuvé en lots confiés aux agents ci-dessous, vérifie sur artefacts, réassigne en cas d'échec)
+
+### `agents/`
+
+Sous-agents lancés par `/dispatch`, chacun avec son modèle. Un agent créé en cours de session n'est pas disponible tout de suite (constaté le 2026-10-05 : refusé juste après création, disponible plus tard dans la même session).
+
+| Agent | Modèle | Rôle |
+|-------|--------|------|
+| `exec-simple` | Haiku | lot mécanique : le brief contient le texte exact à écrire, ou correction mécanique dans un seul fichier |
+| `exec-code` | Sonnet | tout lot décrit en prose : code borné, tests, boilerplate, doc |
+| `relecteur` | Opus, lecture seule | relecture indépendante d'un lot à risque |
 
 ### `tools/`
 

@@ -42,6 +42,8 @@ function readPending() {
   } catch (e) { return []; }
 }
 function clearPending() {
+  // Le journal est commun a la session : la fin d'un sous-agent ne purge pas les drapeaux du tour principal.
+  if (agentTranscript) return;
   try { if (fs.existsSync(pendingLog)) fs.writeFileSync(pendingLog, ''); } catch (e) {}
 }
 
@@ -61,8 +63,19 @@ try { input = fs.readFileSync(0, 'utf8'); } catch(e) { process.exit(0); }
 let j;
 try { j = JSON.parse(input); } catch(e) { process.exit(0); }
 
-const transcript = j.transcript_path || '';
+// SubagentStop (2026-10-05, /dispatch) : transcript_path y reste celui de la session principale,
+// le travail de l'agent est dans agent_transcript_path (doc hooks, SubagentStop input).
+// PreToolUse sur SubagentHandback : le rapport part par cet outil AVANT l'arret, et un blocage en
+// SubagentStop arrive trop tard (sonde du 2026-10-05 : gate=1 journalise, agent deja rendu). C'est donc
+// l'envoi du rapport qu'on bloque. Ce payload n'a pas agent_transcript_path : chemin derive d'agent_id.
+const isHandback = j.hook_event_name === 'PreToolUse' && j.tool_name === 'SubagentHandback';
+if (isHandback && !/^exec-/.test(j.agent_type || '')) process.exit(0);
+const agentTranscript = j.agent_transcript_path || (isHandback && j.agent_id && j.transcript_path
+  ? j.transcript_path.replace(/\.jsonl$/, '') + '/subagents/agent-' + j.agent_id + '.jsonl' : '');
+const transcript = agentTranscript || j.transcript_path || '';
 if (!transcript || !fs.existsSync(transcript)) process.exit(0);
+// Un executant lance en fond n'a pas encore rendu : la session est en attente, pas en fin de lot.
+const attendAgent = Array.isArray(j.background_tasks) && j.background_tasks.some(t => t && t.type === 'subagent');
 
 // Motifs partages avec pre-guard-outward.js (extraits le 2026-09-11).
 const { isBashProducer } = require('./lib/producer.js');
@@ -76,6 +89,7 @@ const toolEvents = [];
 // tool_result reviennent aussi en role=user, d'ou le filtre sur le type de bloc.
 let turnStart = 0;
 let lastAssistantText = '';
+let handback = (isHandback && j.tool_input && typeof j.tool_input.message === 'string') ? j.tool_input.message : '';
 
 for (const line of lines) {
   try {
@@ -106,8 +120,15 @@ for (const line of lines) {
           // Grep/Glob : chemin + motif, pour que le gate 2h reconnaisse la relecture d'un fichier nomme.
           target = c.name === 'Read' ? ((c.input && c.input.file_path) || '')
             : (((c.input && c.input.path) || '') + ' ' + ((c.input && c.input.pattern) || ''));
+        } else if (c.name === 'Agent' && /^exec-/.test((c.input && c.input.subagent_type) || '')) {
+          // Lot delegue a un executant (/dispatch) : ses Edit/Write n'apparaissent pas dans ce
+          // transcript, le gate 1 ne les voyait pas. Compte comme production une fois l'agent rendu.
+          kind = attendAgent ? 'other' : 'produce';
+          target = c.input.subagent_type;
         } else {
           kind = 'other';
+          // Rapport d'un sous-agent : il part par cet outil, pas en texte (transcript reel du 2026-10-05).
+          if (!isHandback && c.name === 'SubagentHandback' && c.input && typeof c.input.message === 'string') handback = c.input.message;
         }
         toolEvents.push({ name: c.name, kind, target, full: ((c.name === 'Bash' || c.name === 'PowerShell') ? ((c.input && c.input.command) || '') : '') });
       } else if (c.type === 'text' && role === 'assistant') {
@@ -120,6 +141,8 @@ for (const line of lines) {
 // alors le texte PRECEDENT (REVERIF present refuse, constate le 2026-09-24). L'entree du hook
 // porte le message final dans last_assistant_message ; le transcript reste le repli.
 if (typeof j.last_assistant_message === 'string' && j.last_assistant_message) lastAssistantText = j.last_assistant_message;
+// Sous-agent : last_assistant_message n'est alors que le texte de cloture, le rapport juge est le handback.
+if (handback) lastAssistantText = handback;
 
 // Outils du TOUR COURANT : c'est sur eux que portent les gates 2b a 2g.
 const turnEvents = toolEvents.slice(turnStart);
@@ -161,7 +184,11 @@ if (lastProdIdx !== -1) {
   // ecrit les entries dans l'ordre de COMPLETION du tool_use, pas d'emission).
   // Quand Bash + Grep sont paralleles, les Grep finissent souvent avant et sont
   // ecrits avant le Bash dans le JSONL meme s'ils sont conceptuellement "ensemble".
-  const windowStart = Math.max(0, lastProdIdx - 5);
+  // Lot delegue (executant, ou appel Agent vers exec-*) : la verif doit SUIVRE la production. Avec la
+  // fenetre arriere, le Read exige avant tout Edit valait verification : un executant Haiku a edite puis
+  // rendu son rapport sans rien relancer, exit 0 (transcript reel du 2026-10-05).
+  const strict = !!agentTranscript || toolEvents[lastProdIdx].name === 'Agent';
+  const windowStart = strict ? lastProdIdx + 1 : Math.max(0, lastProdIdx - 5);
   const windowVerif = toolEvents.slice(windowStart).find(e => e.kind === 'verify');
   if (!windowVerif) {
     const lastProd = toolEvents[lastProdIdx];
