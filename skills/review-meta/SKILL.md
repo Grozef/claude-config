@@ -26,7 +26,7 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 2. **Analyser** pour chaque fichier :
    - Compter les entrees totales (`## YYYY-MM-DD` headings)
    - Identifier les entrees > 90 jours (date dans le titre vs aujourd'hui)
-   - Detecter doublons potentiels par titre similaire (Levenshtein < 5 ou substring match)
+   - Detecter doublons potentiels par titre similaire (Levenshtein < 5 ou substring match), archives comprises : `grep -h '^## ' meta/archive-erreurs-*.md` pour erreurs, `meta/archive-[0-9]*.md` pour learnings (titres seuls, sans lire les archives en entier)
    - Detecter redondances thematiques (meme tag wikilink utilise > 3 fois sur des entrees proches)
 
 2bis. **Tally de recurrence (GATE deterministe — sortie dans le contexte AVANT toute conclusion) :**
@@ -85,7 +85,7 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 
 ## Garde-fous
 
-- **Spillover par TAILLE** (pas seulement par age) : si un append-only depasse ~400 lignes, proposer d'archiver les entrees les plus ANCIENNES vers `meta/archive-2026.md` jusqu'a repasser sous ~280 lignes. Couper sur une frontiere d'en-tete `## YYYY-MM-DD`, backup avant, verifier qu'aucune entree `## ` n'est perdue (somme garde+archive = avant). Les wikilinks restent resolvables (archive dans le vault). Cf spillover learnings du 2026-06-28.
+- **Spillover par AGE** de `erreurs.md` et `learnings.md` (depuis 2026-10-05 ; l'ancien seuil de ~400 lignes etait depasse d'un facteur 3) : proposer d'archiver les entrees anterieures au mois precedent (garder le mois courant et le precedent) vers `meta/archive-erreurs-YYYY.md` pour erreurs, `meta/archive-YYYY.md` pour learnings, plus recent en haut de l'archive. Trier sur la DATE de l'en-tete `## YYYY-MM-DD`, pas sur la position, backup avant, verifier qu'aucune entree `## ` n'est perdue (somme garde+archive = avant). Une entree archivee reste lue partout : le rappel automatique (`hooks/lib/vault-search.js`, regex `JOURNALS`) et `meta-tally.sh` prennent actif + archives. Ne pas donner un autre nom a une archive sans mettre ces deux-la a jour.
 - Si fichier source < 50 lignes → pas d'archivage proposé (pas assez de matiere)
 - Orphelins : `meta-tally.sh` liste les wikilinks sans note `concepts/` ; creer le stub manquant plutot que retirer le lien.
 - Si entree contient un wikilink vers un projet `[[projet-actif]]` → ne PAS archiver meme si > 90j (matiere active)

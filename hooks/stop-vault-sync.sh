@@ -42,16 +42,8 @@ mkdir -p "$DEST"
 
 SYNCED=0
 
-# Sync SESSION.md vers sessions/<projet>/  (trio deplace dans documentation_claude/, fallback racine)
-SESS_SRC="SESSION.md"; [ -f "documentation_claude/SESSION.md" ] && SESS_SRC="documentation_claude/SESSION.md"; [ -f "docs/documentation_claude/SESSION.md" ] && SESS_SRC="docs/documentation_claude/SESSION.md"
-if [ -f "$SESS_SRC" ]; then
-  SESS_DIR="$VAULT/sessions/$VAULT_NAME"
-  mkdir -p "$SESS_DIR"
-  DATE=$(date '+%Y-%m-%d')
-  # Extraire un resume compact du SESSION.md
-  head -30 "$SESS_SRC" > "$SESS_DIR/$DATE.md"
-  SYNCED=$((SYNCED + 1))
-fi
+# sessions/<projet>/<date>.md : ecrit par le skill /checkpoint SEUL. La copie `head -30 SESSION.md`
+# faite ici a chaque Stop ecrasait ce checkpoint (vault, meta/learnings.md 2026-10-03).
 
 # Bidirectional sync for project fiche and infra
 # Vault uses: <name>.md and <name>-infra.md

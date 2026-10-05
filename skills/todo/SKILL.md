@@ -22,19 +22,21 @@ ne jamais inventer de chemin.
 - Un bloc `## Projets (index + chemins)` en tête : liste TOUS les projets + chemin réel (incl. hors-www). Reference, pas des taches.
 - Puis un titre `## <projet>` par projet ayant des taches (ex `## projet-a`, `## projet-b`, `## carte / libelle-compose`).
 - Item : `- [ ] [type] (YYYY-MM-DD) texte [[projet]]` — `type` ∈ {op, idee, revue}, placé juste après la case.
-- Plus récent en haut de chaque bloc projet. Les `- [x]` (faits) restent sous leur projet.
+- Plus récent en haut de chaque bloc projet. Les faits (`- [x]`) vivent dans `$CLAUDE_VAULT/TODO-archive.md`,
+  sous le même titre `## <projet>` (depuis 2026-10-05 : les cochés pesaient 102 Ko sur 139).
 
 ## Règle commune
 
-Toujours **Read** `TODO.md` avant tout Edit (never-assume : on agit sur la donnée réelle, pas sur
-une structure supposée). Confirmer en UNE ligne dense. Pas de fioriture.
+Toujours lire le **bloc concerné** avant tout Edit (never-assume : on agit sur la donnée réelle, pas sur
+une structure supposée), jamais le fichier entier : `grep -n '^## ' TODO.md` (Bash) pour borner le bloc
+`## <projet>`, puis **Read** avec offset/limit sur ce seul intervalle. Confirmer en UNE ligne dense. Pas de fioriture.
 
 ## Sous-commandes
 
 ### `add <projet> <type> "<texte>"`
 `<type>` ∈ {op, idee, revue}. Exemple : `/todo add projet-a op "corriger le récap"`
 1. Date du jour : `date +%Y-%m-%d` (Bash).
-2. Read TODO.md. Chercher le titre `## <projet>` (insensible casse ; le projet peut avoir un
+2. Lister les titres (règle commune). Chercher le titre `## <projet>` (insensible casse ; le projet peut avoir un
    libellé composé comme `## carte / libelle-compose` — matcher sur le mot-clé).
 3. Si le titre existe : Edit, insérer `- [ ] [<type>] (YYYY-MM-DD) <texte> [[<projet>]]`
    **juste après** la ligne de titre (= plus récent en haut du projet).
@@ -46,9 +48,9 @@ une structure supposée). Confirmer en UNE ligne dense. Pas de fioriture.
 ### `list [projet|type]`
 Sans argument → tous les items non cochés, groupés par projet. Avec un nom de projet → seulement
 ce projet. Avec un type (op|idee|revue) → seulement les items de ce type, tous projets.
-1. Read TODO.md.
+1. Lire le bloc du projet (règle commune) ; sans nom de projet, Read à partir du premier titre qui suit l'index.
 2. Afficher les items **non cochés** (`- [ ]`) numérotés par projet (repartir de 1 par projet),
-   dans l'ordre du fichier. Ignorer les `- [x]`. Ignorer le bloc index.
+   dans l'ordre du fichier. Ignorer le bloc index.
 3. Format dense :
    ```
    [projet-a]
@@ -61,10 +63,12 @@ ce projet. Avec un type (op|idee|revue) → seulement les items de ce type, tous
 
 ### `done <projet> <n>`
 Coche le n-ième item NON coché du projet. Exemple : `/todo done projet-b 1`
-1. Read TODO.md.
+1. Lire le bloc du projet (règle commune).
 2. Sous le titre `## <projet>`, compter les `- [ ]` ; cibler le n-ième.
-3. Edit : remplacer son `- [ ]` par `- [x]` (laisser texte + tag de type en place).
-4. Confirmer : `Fait [projet-b] 1 : rebasculer cypress.yml`.
+3. Edit de TODO.md : retirer la ligne de l'item.
+4. Edit de `TODO-archive.md` : insérer l'item juste après le titre `## <projet>` (le créer en fin de fichier
+   s'il manque), `- [ ]` -> `- [x]`, texte + tag de type inchangés, suffixe ` — fait YYYY-MM-DD`.
+5. Confirmer : `Fait [projet-b] 1 : rebasculer cypress.yml`.
 
 ### sans argument
 Équivaut à `list` (tous les projets).
@@ -86,8 +90,7 @@ Même règle commune : Read avant tout Edit, confirmation en une ligne.
   dans la confirmation.
 
 ## Notes
-- Ne jamais réécrire tout le fichier : Edit ciblé uniquement (préserve frontmatter, index, ordre, `[x]`).
+- Ne jamais réécrire tout le fichier : Edit ciblé uniquement (préserve frontmatter, index, ordre).
 - Le compteur op/idee/revue au démarrage (`session-start.js`) lit les tags `[type]` inline, pas les
   titres de section — ne pas retirer le tag de type d'un item.
-- Purge optionnelle sur demande explicite ("nettoie le todo") : retirer les `- [x]` datés de plus
-  de 30 jours. Ne jamais purger sans demande.
+- `TODO-archive.md` ne se purge pas sans demande explicite.

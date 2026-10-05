@@ -88,8 +88,9 @@ try {
   if (VAULT && fs.existsSync(TODO)) {
     const lines = fs.readFileSync(TODO, 'utf8').split('\n');
     const counts = { op: 0, idee: 0, revue: 0 };
-    // Correspondance dossier -> tag(s) : ~/.claude/todo-map.conf, la MEME table que
-    // tools/todo-project.sh. L'ancien rapprochement par prefixe du basename rendait une
+    // Correspondance dossier -> tag(s) : lib/todo-map.js (carte partagee du vault +
+    // complement local), les MEMES sources que tools/todo-project.sh. L'ancien
+    // rapprochement par prefixe du basename rendait une
     // liste VIDE des que le nom du dossier et le tag divergeaient (separateur different,
     // suffixe de depot) — et une liste vide se lit "rien a faire", soit exactement
     // l'incident du 2026-07-05 que ce bloc doit empecher. Constate le 2026-09-08.
@@ -127,7 +128,7 @@ try {
     // Pas de correspondance = le toDo projet n'a PAS ete consulte. Le dire, plutot que de
     // laisser le silence passer pour "aucune tache" ([[degradation-silencieuse]]).
     if (!myTags.length && (hasSess || fs.existsSync('.git'))) {
-      console.log("toDo projet NON charge : « " + here + " » n'a pas d'entree dans ~/.claude/todo-map.conf");
+      console.log("toDo projet NON charge : « " + here + " » n'a pas d'entree dans claude/projets-map.conf du vault (ni dans ~/.claude/todo-map.conf)");
     }
   }
 } catch (e) { /* compteur best-effort, ne jamais bloquer le demarrage */ }
