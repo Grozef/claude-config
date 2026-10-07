@@ -73,3 +73,21 @@ Regle d'usage : si l'artefact ne peut pas etre produit ici, ecrire
 - artefact: le fichier RELU apres la derniere ecriture, et pour chaque affirmation de fait qu'il porte (citation, attribution de source, chiffre, « seul », « aucun ») la page brute, le grep ou le log qui la prouve. Un resume (WebFetch, sous-agent, memoire) n'est pas une source.
 - commande: Read/grep du livrable ; `curl -sL <url>.md | grep` pour une doc ; puis bloc `REVERIF :` en fin de message, une ligne `- affirmation -> artefact` (ou `-> NO-VERIFY: ...`)
 - contre-exemple: 2026-09-14 « Audit pratiques Opus 5 livre avec 3 affirmations reprises de resumes, dans le tour meme ou je capturais ce risque »
+
+## changement-partage — symbole, cle de store, selecteur, colonne, valeur sentinelle modifies
+- declencheur: edition d'un element que d'autres fichiers lisent : fonction ou champ exporte, cle de store, selecteur CSS global, colonne, nouvelle valeur ecrite dans une colonne existante (gate 2i)
+- artefact: la LISTE de ses consommateurs, obtenue par grep sur le depot, et chacun EXERCE apres le changement. Corriger le fichier nomme par la demande ne dit rien des autres lecteurs.
+- commande: `grep -rn <symbole|cle|selecteur|colonne>` sur le depot entier, puis un controle par consommateur (test, rendu, requete)
+- contre-exemple: 2026-09-27 « Regle CSS globale validee sur un seul de ses consommateurs : regression livree » ; 2026-09-26 « Nouvelle valeur sentinelle (rank = 0) introduite sans relire ses consommateurs » ; 2026-09-29 « Corrige le fichier nomme par le toDo, pas tous les lecteurs de la donnee nulle »
+
+## valeur-limite — mecanisme remplace : liaison, priorite, calcul, filtre, seuil
+- declencheur: remplacement d'un mecanisme existant par un autre, ou seuil pose (gate 2i)
+- artefact: le chemin null / vide / zero resultat / borne JOUE, et son resultat compare a celui de la BASE, construite depuis le commit de base et non depuis l'arbre de travail. Une optimisation se prouve des deux cotes : gain sur la cible, rendu inchange hors cible.
+- commande: `git worktree add <tmp> <base>` puis le meme scenario des deux cotes ; valeurs a jouer : null, chaine vide, liste vide, 0, borne haute
+- contre-exemple: 2026-09-27 « Priorite `a ?? b ?? c` introduite sans tester l'effacement : regression livree comme "faite" » ; 2026-09-29 « Recherche des cards : fix livre sur les tests back, deux regressions UI vues seulement au navigateur » ; 2026-09-27 « Reference "avant" construite depuis l'arbre de travail deja modifie »
+
+## test-probant — test, sonde, fixture ecrits ce tour
+- declencheur: test, script de controle, sonde de rendu ou fixture ecrits ou modifies dans le tour (gate 2i)
+- artefact: le test vu ROUGE une fois sans le correctif, la preuve que la condition testee est en place (quel fichier tourne, quel serveur repond), et une fixture COPIEE d'un cas reel. Un vert obtenu sans ces trois preuves ne dit rien.
+- commande: `git checkout <base> -- <fichiers du correctif>` puis le test (attendu : rouge), restauration, puis vert ; `command -v` / `curl` / `ReflectionClass::getFileName` pour prouver ce qui tourne
+- contre-exemple: 2026-09-26 « Test de non-regression vert SANS le correctif : scenario hors de la fenetre du bug » ; 2026-09-30 « Deux tests qui ne testaient pas la chose : copie ecrasee, binaire toujours visible » ; 2026-10-05 « Gate de sous-agent livre sur des fixtures inventees »

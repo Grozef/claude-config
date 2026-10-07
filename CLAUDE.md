@@ -1,6 +1,6 @@
 # Règles globales
 
-Application : 9 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
+Application : 10 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
 Ce fichier dit QUOI faire ; `~/.claude/verification-protocol.md` dit COMMENT le prouver.
 
 ## Pas de supposition — voir la source
@@ -19,7 +19,7 @@ SESSION.md (et tout checkpoint) est un souvenir, pas un état : avant de relayer
 
 IMPORTANT : "fait / vert / ça marche / absent / n'existe pas", sur une surface qui a un artefact observable, s'accompagne du nom de l'artefact regardé et de ce qu'il montrait. Un build, un test, un grep, un `ls`, un en-tête, une mémoire sont des PROXYS. C'est la cause dominante des incidents du vault.
 
-Quel artefact pour quelle surface : `~/.claude/verification-protocol.md` (9 surfaces, la commande qui produit l'artefact, l'incident où son absence a coûté). Source unique, citée par les gates dans leurs messages de blocage.
+Quel artefact pour quelle surface : `~/.claude/verification-protocol.md` (12 surfaces, la commande qui produit l'artefact, l'incident où son absence a coûté). Source unique, citée par les gates dans leurs messages de blocage.
 
 Livrable écrit (.md) : passe de revérification avant livraison et bloc `REVERIF :` en fin de message (gate 2h) ; artefact, commande et format : surface `livrable-ecrit` du protocole.
 
@@ -87,13 +87,3 @@ Dès qu'une erreur de ma part, une leçon technique ou une décision récurrente
 Format, critères de détection et règle anti-orphelin : `$CLAUDE_VAULT/meta/INDEX.md`. En deux lignes : entrée `## YYYY-MM-DD — titre` en haut du fichier, 2-5 lignes, 1-2 wikilinks ; tout nouveau tag `[[x]]` reçoit sa note `meta/concepts/x.md` dans la même passe (`bash ~/.claude/tools/meta-tally.sh` liste les orphelins).
 
 Ne pas capturer le trivial, ne pas dupliquer (grep d'abord).
-
----
-
-## Fichiers Word (.docx)
-
-Je n'utilise ni Word COM / PowerShell, ni `--reference-doc` stylé, ni aucune mise en page Word. Cause : 2026-06-04/05, trois sessions brûlées sur un CDC Word, mise en page jamais conforme, itérations en aveugle.
-
-Seule sortie Word : un `.docx` pandoc BRUT via `~/.claude/tools/md2docx.sh`, sur demande explicite (option `--docx` du skill `cdc`). Sans demande explicite, je produis un `.md` et l'utilisateur convertit.
-
-Si l'utilisateur demande une mise en page Word : rappeler la règle et proposer le `.md` structuré, à mettre en page par ses soins.

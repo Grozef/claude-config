@@ -48,6 +48,12 @@ allowed-tools: Read, Edit, Write, Glob, Bash
    Rapprocher chaque gate des bypass « faux positif » de `.no-verify.log` pour estimer son taux de faux
    positifs. C'est la donnee qui tranche le sort du gate 1 a la re-mesure du 2026-10-05.
 
+2quinquies. **Taux d'echappement (depuis le 2026-10-05) :** bloc « TAUX D'ECHAPPEMENT » de la sortie de
+   `meta-tally.sh` (ligne `Detecte :` des erreurs, format dans `meta/INDEX.md`). Une entree d'erreur sans
+   cette ligne se classe a la lecture avant de conclure. Base : 33 echappees sur 91 du 2026-09-14 au
+   2026-10-05. Le gate 2i (passe de relecture sur le code) se juge sur ce taux et sur ses lignes `gate=2i`
+   de `.gate-blocks.log` : s'il ne baisse pas a la quinzaine suivante, proposer le retrait du gate.
+
 3. **Rapport compact** au format :
 ```
 ## review-meta — YYYY-MM-DD
@@ -59,6 +65,7 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 ### Dette de verification (.no-verify.log + .gate-blocks.log)
 - N bypass depuis la derniere revue, top raisons : ... -> M items [op] ouverts dans TODO.md
 - Blocages par gate : gate=X (n, dont f faux positifs) ...
+- Taux d'echappement par quinzaine : e/t (p %), contre la quinzaine precedente
 
 ### erreurs.md
 - N entrees, X obsoletes (> 90j), Y doublons potentiels

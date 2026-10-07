@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # md2docx.sh — convertit du markdown en .docx via pandoc (style par défaut, SANS reference-doc).
-# Choix délibéré : pas de Word COM, pas de reference-doc stylé (voie qui a brûlé 3 sessions, 2026-06-04/05).
 # Usage :
 #   md2docx.sh [--open] <input.md> [output.docx]
 #   md2docx.sh [--open] -          [output.docx]   # lit le markdown sur stdin
