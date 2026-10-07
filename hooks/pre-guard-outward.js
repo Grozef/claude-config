@@ -179,11 +179,13 @@ function aRelire() {
     let top, stat, ref = 'HEAD';
     try {
       top = git(c ? path.resolve(bases[0], res(c)) : bases[bases.length - 1], 'rev-parse', '--show-toplevel');
-      if (vus.has(top)) continue;
-      vus.add(top);
+      // Un depot se compte une fois par mode : `commit -m docs; commit -am code` a deux diffs differents.
+      const idx = !ajoute && INDEX_SEUL.test(m.input.slice(m.index + m[0].length));
+      if (vus.has(top + idx)) continue;
+      vus.add(top + idx);
       const cle = top.replace(/\\/g, '/').toLowerCase();
       if (rendus.some(b => b.replace(/\\/g, '/').toLowerCase().includes(cle))) continue;
-      if (!ajoute && INDEX_SEUL.test(m.input.slice(m.index + m[0].length))) stat = git(top, 'diff', '--cached', '--numstat');
+      if (idx) stat = git(top, 'diff', '--cached', '--numstat');
       if (stat) ref = '--cached'; else stat = git(top, 'diff', 'HEAD', '--numstat');
     } catch (e) { continue; }
     let n = 0;
