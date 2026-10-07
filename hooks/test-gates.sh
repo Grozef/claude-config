@@ -495,6 +495,7 @@ rung "commit de l'index, code hors index" "$TMP/o1" Bash "git -C $RMIX commit -q
 rung "index .md, commande suivie de -la" "$TMP/o1" Bash "git -C $RMIX commit -qm docs && ls -la" pass
 rung "meme depot, commit -a          " "$TMP/o1" Bash "git -C $RMIX commit -qam docs" deny
 rung "meme depot, commit par chemin  " "$TMP/o1" Bash "git -C $RMIX commit app.js -qm lot" deny
+rung "deux commits, le 2e en -a      " "$TMP/o1" Bash "git -C $RMIX commit -qm docs; git -C $RMIX commit -qam code" deny
 rung "meme depot, commit -m lot .    " "$TMP/o1" Bash "git -C $RMIX commit -qm lot ." deny
 rung "meme depot, git add puis commit" "$TMP/o1" Bash "git -C $RMIX add app.js && git -C $RMIX commit -qm lot" deny
 rung "commit par chemin, index vide  " "$TMP/o1" Bash "git -C $RGROS commit app.js -qm lot" deny
