@@ -261,6 +261,11 @@ run "2i bypass ne couvre pas 2i      " "$TMP/g2i7" 2 2i
   printf "$TUSE\n" "Bash" '{"command":"node C:/t/claude/s1/scratchpad/sonde.js"}'; } > "$TMP/g2i8"
 run "2i script du scratchpad (passe) " "$TMP/g2i8" 0
 
+# Donnees et configuration ne sont pas du code : un tour qui les edite et les relit n'appelle pas la passe.
+{ printf '%s\n' "$USTR"; for f in /c/v/.obsidian/app.json /c/v/claude/projets-map.conf /c/v/Excalidraw/d.excalidraw; do
+    printf "$TUSE\n" "Edit" "{\"file_path\":\"$f\"}"; printf "$TUSE\n" "Read" "{\"file_path\":\"$f\"}"; done; } > "$TMP/g2i10"
+run "2i json, conf, excalidraw (passe)" "$TMP/g2i10" 0
+
 { printf '%s\n' "$USTR"; printf "$TUSE\n" "NotebookEdit" '{"notebook_path":"/c/n.ipynb","new_source":"x"}';
   printf "$TUSE\n" "Read" '{"file_path":"/c/n.ipynb"}'; } > "$TMP/g2i9"
 run "2i notebook (notebook_path)     " "$TMP/g2i9" 2 2i
@@ -411,6 +416,7 @@ mkrepo() { # nom  fichier  lignes_modifiees
   cygpath -m "$d" 2>/dev/null || echo "$d"
 }
 RGROS=$(mkrepo gros app.js 60); RPETIT=$(mkrepo petit app.js 1)
+RLOCK=$(mkrepo lock package-lock.json 60)
 RDOC=$(mkrepo doc notes.md 60); RRISK=$(mkrepo risque database/migrations/m.php 1)
 # Formes copiees du transcript reel du 2026-10-05 : appel Agent, accuse de lancement en fond, rapport rendu.
 AGREL='{"message":{"role":"assistant","content":[{"type":"tool_use","id":"ag1","name":"Agent","input":{"description":"relecture","subagent_type":"relecteur","prompt":"lot 1, diff : git -C \"'"$(git -C "$RGROS" rev-parse --show-toplevel)"'\" diff HEAD"}}]}}'
@@ -425,6 +431,7 @@ case "$LAST_OUT" in *'60 ligne'*|*'120 ligne'*) echo "[OK]  commit : le refus ch
   *) echo "[x]   commit : refus sans chiffre : $LAST_OUT"; fail=$((fail+1)) ;; esac
 rung "commit code sous le seuil      " "$TMP/o1" Bash "git -C $RPETIT commit -qam lot" pass
 rung "commit de .md seuls            " "$TMP/o1" Bash "git -C $RDOC commit -qam lot" pass
+rung "commit d'un package-lock seul  " "$TMP/o1" Bash "git -C $RLOCK commit -qam lot" pass
 rung "commit chemin a risque         " "$TMP/o1" Bash "git -C $RRISK commit -qam lot" deny
 rung "commit par cd puis git commit  " "$TMP/o1" Bash "cd $RGROS && git commit -qam lot" deny
 rung "commit, chemin -C entre quotes " "$TMP/o1" Bash "git -C \"$RGROS\" commit -qam lot" deny
@@ -441,7 +448,7 @@ rung "commit, relecteur rendu        " "$TMP/c4" Bash "git -C $RGROS commit -qam
 rung "commit, relu d'un AUTRE depot  " "$TMP/c4" Bash "git -C $RRISK commit -qam lot" deny
 printf '%s\n' "$UP" "$AGREL" "$AGACK" "$AGRAP" "$CMT" "$CMTOK" > "$TMP/c5"
 rung "commit suivant : relu a refaire" "$TMP/c5" Bash "git -C $RGROS commit -qam lot2" deny
-# Forme copiee du transcript reel du 2026-10-06 (dev_portfolio, lot /cv) : le rapport d'un relecteur en
+# Forme copiee du transcript reel du 2026-10-06 (autre depot) : le rapport d'un relecteur en
 # fond arrive en entree `attachment` sans champ `message` ; deux relecteurs rendus, commit refuse 3 fois.
 AGATT='{"type":"attachment","attachment":{"type":"queued_command","prompt":"<agent-message from=\"a3ca1858a481d9650\">\n[Subagent hand-back] VERDICT : NON REFUTE","commandMode":"prompt","origin":{"kind":"peer","from":"a3ca1858a481d9650","senderTaskId":"a3ca1858a481d9650","name":"relecteur","handback":true},"isMeta":true}}'
 AGATT_AUTRE='{"type":"attachment","attachment":{"type":"queued_command","prompt":"<agent-message from=\"bbbb1858a481d9650\">\n[Subagent hand-back] VERDICT : NON REFUTE","commandMode":"prompt","origin":{"kind":"peer","from":"bbbb1858a481d9650","name":"relecteur","handback":true},"isMeta":true}}'
