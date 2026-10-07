@@ -49,7 +49,7 @@ const VAL = '(?:"(?:[^"\\\\]|\\\\.)*"|\'[^\']*\'|[^\\s;&|"\']+)';
 const INDEX_SEUL = new RegExp('^(?:\\s+(?:-[qsv]+|--(?:amend|no-edit|quiet|signoff|no-verify)|-[qsv]*[mF]\\s*' + VAL
   + '|--(?:message|file)[=\\s]\\s*' + VAL + '))*\\s*(?:$|[;&|\\n<>])');
 const SEUIL_LIGNES = 40;
-const NON_CODE = /\.(md|txt|log|csv|jsonl|lock)$/i;
+const NON_CODE = /\.(md|txt|log|csv|jsonl|lock)$|(^|\/)package-lock\.json$/i;
 const RISQUE = /(^|\/)migrations?\/|auth|polic(y|ies)|(^|\/)stores?\/|(^|\/)(main|global|theme|app)\.s?css$/i;
 // Messages role=user qui ne sont PAS une prise de parole : feedback des hooks, notifications, rapport
 // d'un sous-agent (il effacait un GO PUSH ou un SANS RELECTURE donne juste avant, 2026-10-05).

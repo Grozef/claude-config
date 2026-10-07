@@ -212,7 +212,7 @@ Bypass legitime : si verif impossible (changement purement declaratif, doc pure,
 }
 
 // --- Gate 2i : CODE produit ce tour sans passe de relecture (2026-10-05) ---
-// 33 des 91 erreurs classees du 14/09 au 05/10 ont ete trouvees par la reverification demandee ou par
+// 35 des 95 erreurs classees du 14/09 au 05/10 ont ete trouvees par la reverification demandee ou par
 // l'utilisateur ; pour le code, tests verts a la livraison a chaque fois. Le 2h ne couvre que les .md.
 // Le PREMIER arret d'un tour qui a ecrit du code est bloque une fois : la passe que l'utilisateur
 // declenchait a la main tourne avant le message final. Passe quand un feedback 2i POSTERIEUR a la
@@ -220,8 +220,9 @@ Bypass legitime : si verif impossible (changement purement declaratif, doc pure,
 // redemande donc une : sans cela, dans un tour long, seul le premier arret etait couvert (2026-10-05,
 // le garde de commit ecrit 9 minutes apres la passe n'en a eu aucune). Pas de bloc de forme exige (le 2h a montre qu'il se remplit de memoire). Non neutralise par
 // [NO-VERIFY:]. Session principale seulement. Angle mort assume : code ecrit par Bash/PowerShell.
+// Hors code : donnees et configuration (.json, .conf, .excalidraw), en plus des textes.
 const isCode = e => ['Edit', 'Write', 'NotebookEdit'].includes(e.name)
-  && !/\.(md|txt|log|csv|jsonl)$/i.test(e.target)
+  && !/\.(md|txt|log|csv|jsonl|json|conf|excalidraw)$/i.test(e.target)
   && !/[\/\\]\.claude[\/\\]plans[\/\\]|[\/\\]scratchpad[\/\\]/i.test(e.target);
 const codeDuTour = [...new Set(turnEvents.filter(isCode).map(e => e.target.replace(/\\/g, '/')))];
 if (!agentTranscript && codeDuTour.length) {
