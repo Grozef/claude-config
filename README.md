@@ -55,7 +55,8 @@ Câblés dans `settings.json`.
 | `pre-edit-write.sh` | PreToolUse/Write\|Edit | **bloque** une modification de fichier non lu dans la session (dans un sous-agent : non lu par CET agent) |
 | `post-write.sh` | PostToolUse/Write | met à jour le `.gitignore` du projet après création du trio de contexte |
 | `user-prompt-submit.js` | UserPromptSubmit | rappel never-assume à chaque tour |
-| `stop-verify.js` / `.sh` | Stop | **bloque** une complétion affirmée sans tool, une négation d'existence non qualifiée, un aveu de scope-creep, un livrable `.md` sans passe de revérification (bloc `REVERIF`, gate 2h) |
+| `stop-verify.js` / `.sh` | Stop | **bloque** une complétion affirmée sans tool, une négation d'existence non qualifiée, un aveu de scope-creep, un livrable `.md` sans passe de revérification (bloc `REVERIF`, gate 2h), du code écrit dans le tour sans passe de relecture postérieure à sa dernière écriture (gate 2i) |
+| `pre-guard-outward.js` | PreToolUse/Bash, PowerShell, Write, Edit | **refuse** `git push` et `gh pr` sans `GO PUSH` de l'utilisateur ; refuse toute écriture après une protestation tant qu'une question n'a pas reçu de réponse ; depuis le 2026-10-05, **refuse** un `git commit` dont le diff de code atteint 40 lignes ou touche un chemin à risque tant que le sous-agent `relecteur` n'a pas rendu son rapport sur ce dépôt depuis le commit précédent (sortie de secours : `SANS RELECTURE`) |
 | `stop-verify.js` / `.sh` | PreToolUse/SubagentHandback | mêmes gates sur le transcript et le rapport d'un exécutant `exec-*` de `/dispatch` : **bloque** l'envoi du rapport tant qu'aucune vérification ne suit la dernière production. Aussi déclaré en SubagentStop, qui journalise mais arrive après l'envoi du rapport |
 | `stop-vault-sync.sh` | Stop | synchronise fiche / infra vers le vault Obsidian |
 | `stop-capture-reminder.sh` | Stop | rappelle de consigner erreurs / learnings / décisions |
