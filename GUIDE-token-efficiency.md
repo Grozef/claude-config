@@ -71,6 +71,8 @@ Un hook n'agit sur Claude que s'il BLOQUE (code de sortie 2) ou s'il INJECTE du 
 
 Depuis le 2026-09-14 (gate 2h, TODO 197), un tour qui écrit un fichier `.md` (note, TODO, doc ; hors `~/.claude/plans/`) ne se termine qu'après une relecture de ce fichier (Read, ou Grep/Bash qui le nomme) postérieure à sa dernière écriture et un bloc `REVERIF :` en fin de message : une ligne `- affirmation -> artefact` par affirmation de fait, `-> NO-VERIFY: ...` sinon. `[NO-VERIFY:]` ne neutralise pas ce gate. Coût assumé : quelques lignes de sortie par livraison.
 
+Depuis le 2026-10-05 (gate 2i), un tour qui écrit du code par Edit/Write (hors `.md`, `~/.claude/plans/` et scratchpad) est bloqué à l'arrêt qui suit chaque série d'écritures de code : le message liste les fichiers écrits et les surfaces de `verification-protocol.md` à réfuter (`changement-partage`, `valeur-limite`, `test-probant`, `visuel`, `feature-runtime` selon le type de fichier). Le tour se termine dès qu'une vérification suit ce message, sauf si du code est encore écrit ensuite : il lui faut alors une nouvelle passe. Aucun bloc de forme n'est exigé. Le gate 1 n'accepte plus que les vérifications postérieures à la dernière production. Coût assumé : une passe de plus par tour de code, à juger sur le taux d'échappement de `tools/meta-tally.sh`.
+
 #### Hook : rappel du vault
 `user-prompt-submit.js` joint à une demande de production les 2 notes du vault les plus proches ; `post-fail-vault.js` fait de même quand un outil échoue.
 

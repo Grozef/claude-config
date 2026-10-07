@@ -174,9 +174,8 @@ render() {
     # PDF par défaut avec le HTML (--no-pdf pour couper).
     [ "$pdf" -eq 1 ] && html2pdf "$ht"
   fi
-  # Le docx sort en pandoc BRUT sauf --brand explicite (2026-09-04) : la mise en page
-  # Word est la voie qui a brule trois sessions les 2026-06-04/05, et CLAUDE.md ne
-  # tolere le docx que nu. Le branding HTML, lui, reste actif par defaut.
+  # Le docx sort en pandoc BRUT sauf --brand explicite (2026-09-04).
+  # Le branding HTML, lui, reste actif par defaut.
   if [ "$docx" -eq 1 ]; then
     if [ -n "$branddir" ] && [ "$brand_explicite" -eq 1 ]; then
       # docx d'abord SANS ouvrir, puis injection header/footer, puis ouverture du brandé

@@ -42,6 +42,23 @@ echo "-- TOP $topN tags toutes sources (erreurs+learnings+decisions, archives co
 tags "${err[@]}" "${lea[@]}" "$dec" | rank | sed 's/^/  /'
 
 echo
+echo "-- TAUX D'ECHAPPEMENT par quinzaine (ligne 'Detecte :' des erreurs, format : meta/INDEX.md) --"
+# Echappe = trouve par la reverification demandee ou par l'utilisateur ; 'indetermine' sort du denominateur.
+if [ -f "${err[0]}" ]; then
+  cat "${err[@]}" | tr -d '\r' | awk '
+    /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] / { q = substr($2, 1, 7) (substr($2, 9, 2) + 0 <= 15 ? " 01-15" : " 16-fin"); next }
+    /^Detecte : / && q != "" { n[q, $3]++; if ($3 != "indetermine") t[q]++; seen[q] = 1; q = "" }
+    END {
+      for (q in seen) {
+        e = n[q, "reverif-demandee"] + n[q, "utilisateur"]
+        printf "  %s : %d/%d echappes (%.0f %%) | avant %d, gate %d, relecteur %d, apres %d, reverif %d, utilisateur %d, indetermine %d\n", \
+          q, e, t[q], (t[q] ? 100 * e / t[q] : 0), n[q, "avant-livraison"], n[q, "gate"], n[q, "relecteur"], \
+          n[q, "apres-livraison"], n[q, "reverif-demandee"], n[q, "utilisateur"], n[q, "indetermine"]
+      }
+    }' | sort
+else echo "  (erreurs.md absent)"; fi
+
+echo
 echo "-- WIKILINKS ORPHELINS (tag sans note .md NULLE PART dans le vault) --"
 # Obsidian resout un [[lien]] vers n'importe quel <lien>.md du vault (pas seulement concepts/).
 vault_root="$(dirname "$meta")"
