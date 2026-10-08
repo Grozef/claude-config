@@ -82,10 +82,17 @@ const B = k => buckets[k] || (buckets[k] = { sessions: new Set(), calls: 0, in: 
 // Prix publics en $/MTok, lus le 2026-10-05 sur platform.claude.com/docs/en/about-claude/pricing.md :
 // [entree, ecriture cache 1 h, lecture cache, sortie]. Cout PONDERE = comparaison entre modeles, pas
 // une facture (abonnement). Prefixe de message.model ; modele absent de la table -> cout non calcule.
+// La PREMIERE cle qui prefixe le modele gagne : `-5-5` se place avant `-5`.
+// Relu le 2026-10-08 (sonde /dispatch : haiku-5-5 et opus-5 sans prix, sonnet-5-5 compte au cache lu de
+// sonnet-5). Haiku 5.5 : palier des prompts de 100 k tokens au plus, celui d'un lot `exec-simple` ; au-dela
+// la page donne [0.50, 1, 0.05, 2.50].
 const PRIX = {
   'claude-fable-5-1': [10, 20, 0.25, 50],
   'claude-opus-5-5': [4, 8, 0.20, 20],
+  'claude-opus-5': [5, 10, 0.50, 25],
+  'claude-sonnet-5-5': [2, 4, 0.10, 10],
   'claude-sonnet-5': [2, 4, 0.20, 10],
+  'claude-haiku-5-5': [0.10, 0.20, 0.01, 0.50],
   'claude-haiku-4-5': [1, 2, 0.10, 5],
 };
 const cout = (model, m) => {
