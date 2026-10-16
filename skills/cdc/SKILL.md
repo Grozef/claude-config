@@ -1,106 +1,118 @@
 ---
 name: cdc
 description: |
-  Genere un cahier des charges (--type fill|public|tech|full|cdcf), en retro depuis un repo ou en avant-projet depuis un brief. Sortie .md + .html + .pdf, user stories derivees des parcours, diagrammes archify (tech/full) ; --docx pandoc brut en option.
+  Genere un cahier des charges sur le modele unique Modele_CDC.docx (17 sections + annexe A par fonctionnalite), en retro depuis un repo ou en avant-projet depuis un brief. Sortie .md + .docx (styles du modele) + .html + .pdf, diagrammes archify ; --type fill = squelette vierge.
   TRIGGER when: "cahier des charges", "genere le CDC", "/cdc", "redige les specs"
 allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
 # Skill : cdc
-# Invocation : /cdc [--type fill|public|tech|full|cdcf] [--no-html] [--no-pdf] [--no-diagrams] [--docx] [chemin source | description du projet]
+# Invocation : /cdc [--type cdc|fill] [--no-html] [--no-pdf] [--no-docx] [--no-diagrams] [chemin source | description du projet]
 
 **Argument :** $ARGUMENTS
 
+Modèle unique depuis le 2026-10-16 (décision utilisateur : uniformiser les CDC de tous les projets) : `templates/Modele_CDC.docx` (original), calqué en `trames/trame-modele.md` ; `templates/reference-cdc.docx` en est la reference-doc pandoc. Les anciennes trames `public|tech|full|cdcf` sont retirées. Mise à jour du modèle : section finale.
+
+Outils (tous via `bash ~/.claude/tools/cdc.sh <commande>`) : `inventory`, `scaffold`, `fiches`, `lint`, `render`, `docx2pdf`. Le déterministe passe par eux, jamais à la main.
+
 ## Garde-fous (non négociables)
 
-1. **docx via pandoc simple.** Utiliser `~/.claude/tools/md2docx.sh` (pandoc, style par défaut). Après génération `--docx` : ouvrir le fichier pour constater le rendu (cf. feedback-cdc-approach règle 4). Sans `--docx`, on ne touche pas au Word. Depuis le 2026-09-04, `--docx` produit du pandoc BRUT : la charte (header/footer via docx-brand.sh) ne s applique plus que sur `--brand <kit>` explicite, jamais par defaut.
-2. **Zéro exigence inventée.** Chaque ligne doit tracer vers une source réelle (code lu, doc fournie, réponse utilisateur). Toute info non dérivable -> `[À COMPLÉTER]` ou question, jamais d'hallucination ni de présomption.
-3. **La doc D'ABORD — interdiction de remplir sur des résumés.** Avant d'écrire une seule ligne, l'inventaire de doc de l'Étape 2.0 est OBLIGATOIRE pour CHAQUE source fournie. Remplir à partir des seuls `CONTEXT.md`/`README`/survol de code = supposition interdite (cause d'incident 2026-06-23 : demi-session perdue). Lire la doc réelle (`docs/`, `toDo/`, specs) ; le code ne fait que compléter. GATE déterministe : `cdc.sh inventory <repo>` — la sortie doit apparaître dans le contexte avant tout remplissage.
-4bis. **Tout CDC généré est gitignoré, jamais committé.** `cdc.sh` ajoute automatiquement `<out>.md/.html/.docx` au `.gitignore` du repo englobant (scaffold et render). Ne pas committer ces livrables ni retirer ces entrées.
-4. **Un CDC = des EXIGENCES, pas un audit.** Ne JAMAIS inclure dette technique, findings d'audit, vulnérabilités/failles, bugs connus ni limitations du code existant — même en rétro, même si la doc les contient. Ça appartient à un rapport d'audit. Exprimer la sécurité comme exigence (auth, RGPD), jamais comme liste de failles. Si l'utilisateur ne l'a pas demandé explicitement, c'est hors périmètre. GATE déterministe : `cdc.sh lint <fichier>.md` (auto avant rendu) signale tout vocabulaire de dette/audit/WIP à corriger.
+1. **docx sur le modèle.** Le .docx sort par défaut de `cdc.sh render` (reference-doc du modèle : styles, en-tête au titre du YAML, pied « Page X / Y », largeurs de colonnes). Constater le rendu avant livraison : `cdc.sh docx2pdf <f.docx>` (Word sous Windows, LibreOffice ailleurs), `pdftoppm`, puis regarder les images (cf. feedback-cdc-approach).
+2. **Zéro exigence inventée.** Chaque ligne trace vers une source réelle (code lu, doc fournie, réponse utilisateur). Toute info non dérivable -> `[À COMPLÉTER]` ou question. Deux contrôles : la contre-lecture (Étape 3ter, obligatoire) et le lint, qui refuse tout fichier cité introuvable dans le dépôt. Raison : 2026-10-16, CDC Inspection livré avec 20 erreurs (RACI inventée, droits faux, formes d'API de tête), vues seulement à la relecture demandée.
+3. **La doc D'ABORD — interdiction de remplir sur des résumés.** Avant d'écrire une ligne, l'inventaire de l'Étape 2.0 est OBLIGATOIRE pour CHAQUE source. Remplir à partir des seuls `CONTEXT.md` / `README` / survol de code = supposition interdite (incident 2026-06-23 : demi-session perdue). Le code ne fait que compléter la doc.
+4. **Un CDC = des EXIGENCES, pas un audit.** Jamais de dette technique, findings d'audit, vulnérabilités, bugs connus ni limitations du code existant, même en rétro, même si la doc les contient. La sécurité s'exprime en exigences (auth, RGPD). Le lint bloque ce vocabulaire ; un faux positif se justifie par `<!-- lint-ok -->` en fin de ligne.
+5. **CDC généré hors git, sauf s'il est déjà versionné.** `cdc.sh` ajoute `<out>.md/.html/.docx/.pdf` et `<stem>-diagrams/` au `.gitignore` du repo englobant, et le dit (« .gitignore MODIFIÉ ») : le signaler à l'utilisateur. Un CDC déjà suivi par git (choix du projet, ex. LumiSafe) n'est pas touché.
 
 ## Étape 0 — Parser les arguments
 
-- `--type` : `fill` | `public` | `tech` | `full` | `cdcf`. Défaut = `full`.
-- HTML : généré par défaut pour TOUS les types. `--no-html` pour le couper (.md seul).
-- PDF : généré par défaut avec le HTML (depuis le .html, Chrome headless). `--no-pdf` pour le couper ; `--no-html` coupe aussi le PDF.
-- Diagrammes archify : par défaut pour `tech` et `full` (Étape 3bis). `--no-diagrams` pour les couper. Jamais pour `fill`, `public`, `cdcf`.
-- `--docx` : générer aussi le docx (opt-in).
+- `--type` : `cdc` (rempli, défaut) | `fill` (squelette vierge, consignes en place). Un ancien type (`public|tech|full|cdcf`) est refusé par `cdc.sh` : le signaler et proposer `cdc`.
+- Rendu par défaut : .docx + .html + .pdf (le PDF vient du HTML). `--no-docx`, `--no-html` (coupe aussi le PDF), `--no-pdf`.
+- Diagrammes archify : par défaut pour `cdc` (Étape 3bis). `--no-diagrams` pour les couper. Jamais pour `fill`.
 - Reste de `$ARGUMENTS` = chemin source ou description du projet.
 
 ## Étape 1 — Détecter la/les source(s) (sauf type=fill)
 
-PLUSIEURS sources possibles (ex : un repo front + un repo back) : toutes sont à traiter, aucune à ignorer.
+PLUSIEURS sources possibles (ex : un repo front + un repo back, un monorepo) : toutes sont à traiter, aucune à ignorer.
 1. Note / brief / doc de cadrage fournie -> mode **AVANT-PROJET**.
 2. Sinon repo / projet courant présent (`.git`, `composer.json`, `package.json`) -> mode **RÉTRO**.
 3. Les deux -> mode **HYBRIDE** : socle technique depuis le code, objectifs/intentions depuis la doc.
 4. Aucune source -> poser les questions de cadrage (objectif, acteurs, périmètre) en un seul message, puis rédiger.
 
-`type=fill` n'a pas besoin de source : voir Étape 3. `type=cdcf` (expression de besoin amont) s'appuie surtout sur le brief / la doc ; pas de rétro code nécessaire.
-
 ## Étape 2 — Collecte
 
 ### Étape 2.0 — Inventaire de la doc (GATE OBLIGATOIRE, AVANT toute écriture)
-Pour CHAQUE source/repo fourni, lancer le gate déterministe (sa sortie DOIT apparaître dans le contexte avant tout remplissage) :
-`bash ~/.claude/tools/cdc.sh inventory <repo>`
-(le tool fait le `find` des `*.md` hors vendor/node_modules + repère `docs/ doc/ toDo/ .scribe/`).
-Puis LIRE cette doc — c'est la source de vérité fonctionnelle (objectifs, acteurs, user stories, workflows) ; déclarer explicitement quels fichiers sont lus. Ne JAMAIS se contenter de `CONTEXT.md`/`README` puis déduire le reste du code (garde-fou n°3). INTERDICTION de passer à l'Étape 3 sans la sortie `inventory` + la lecture de la doc réelle. Le code (Étape 2 RÉTRO) ne sert qu'à compléter/confirmer ce que la doc ne couvre pas.
+Pour CHAQUE source : `bash ~/.claude/tools/cdc.sh inventory <repo>` (tous les `*.md`, toute profondeur, hors vendor/node_modules/build/storage, + dossiers `docs/ doc/ toDo/ .scribe/`). Sa sortie doit apparaître dans le contexte.
+Puis LIRE cette doc et déclarer les fichiers lus. Elle est la source de vérité fonctionnelle (objectifs, acteurs, workflows, décisions). INTERDICTION de passer à l'Étape 3 sans l'inventaire et la lecture. Les revues et rapports d'audit de l'inventaire ne se lisent pas pour remplir (garde-fou 4).
 
 ### RÉTRO (depuis le code — APRÈS la doc)
 - `composer.json` / `package.json` : nom, stack, dépendances.
-- Arbo racine (`ls`) + points d'entrée.
-- Routes / controllers -> fonctionnalités exposées.
-- Migrations / models -> modèle de données.
-- Repo volumineux : inventaire filtré (`git ls-files`, exclure vendor/node_modules/dist) avant de lire ; ne lire que ce qui alimente une section.
-- Ne rien remonter de la dette/des failles/limitations trouvées dans le code (garde-fou n°4).
+- Routes (`php artisan route:list` quand Laravel répond, sinon le fichier), contrôleurs, FormRequests, Policies / Gates -> fonctionnalités, entrées, erreurs, droits.
+- Migrations / models -> modèle de données ; routeur et vues du front -> écrans.
+- Repo volumineux : `git ls-files` filtré avant de lire ; ne lire que ce qui alimente une section.
 
 ### AVANT-PROJET (depuis la doc)
-- Lire intégralement la/les doc(s) fournie(s).
-- Extraire objectifs, contraintes, acteurs, fonctionnalités attendues.
+- Lire intégralement la/les doc(s) fournie(s) ; extraire objectifs, contraintes, acteurs, fonctionnalités.
 - Tout manque -> question groupée ou `[À COMPLÉTER]`.
 
 ## Étape 3 — Scaffold + remplissage
 
-Tout le déterministe passe par l'outil `~/.claude/tools/cdc.sh` (mapping type->trame, copie, conversions) — ne pas réimplémenter ces étapes à la main.
+1. Squelette : `cdc.sh scaffold [--type fill] [--out <fichier>.md]`. Défaut : `documentation_contractuelle/cahier-des-charges.md` (dossier créé au besoin). Refuse d'écraser sans `--force`.
+2. `fill` : ne rien remplir, le squelette EST le livrable. Rendre : `cdc.sh render <fichier>.md`.
+3. `cdc` : arrêter la liste des fonctionnalités (§6.2), puis générer leurs fiches : `cdc.sh fiches <fichier>.md "F1=Nom" "F2=Nom" …` (une fiche annexe A par F, dans l'ordre de §6.2, saut de page et largeurs compris). Ne jamais recopier le bloc annexe à la main.
+4. Remplir (Edit) sans ajouter ni retirer de section ou de colonne :
+   - YAML `title:` = nom du projet (reporté dans l'en-tête du docx). CDC multi-sources (autre dépôt que celui du CDC) : lister chaque dépôt en chemin absolu sous `sources:` (liste YAML) ; le lint y cherche les fichiers cités. Identification : Version `v0.1 — <date du jour>`, Statut `Version de travail`, Auteurs et Destinataires `[À COMPLÉTER]` sauf source. Suivi des versions : une ligne v0.1, « Création ». Validation : cellules vides (à signer).
+   - Chaque consigne `[*…*]{custom-style="Consigne"}` est REMPLACÉE par le contenu puis supprimée ; sans source, elle laisse place à `[À COMPLÉTER]`. Le lint refuse une consigne restante dans un CDC rempli.
+   - Sans source (rétro) : planning et estimations (§11), gouvernance (§13), risques (§14), maintenance (§15), RACI (§5.1), validation -> `[À COMPLÉTER]`. Jamais d'estimation, de lettre RACI ni de droit déduit.
+   - Lignes de séparation des tableaux (`|----|---------|`) : elles portent les largeurs du modèle, ne pas les modifier.
+   - Le nombre de lignes des tableaux suit le contenu ; un tableau sans source garde une ligne `[À COMPLÉTER]`.
+   - §3 Situation actuelle : le processus AVANT l'application (doc, brief), jamais les limites du code.
+   - §5 et A.7 : un droit se lit dans la Policy, la Gate, le middleware de route ou le garde du routeur front ; une route ouverte à tout compte authentifié est ouverte à tous les rôles.
+   - §6.2 : une ligne `F<n>` par fonctionnalité. Priorité Must / Should / Could et Livrable seulement si la source les donne.
+   - §6.3 : au moins une US par F, jamais d'US sans F. Rôle = un acteur de §5, et seulement un rôle qui a le droit (§5). Critère d'acceptation tiré d'une source lue (doc, décision, test dont on a lu le contenu), sinon `[À COMPLÉTER]`.
+   - §6.4 et A.3 : règles réelles (FormRequest, enum, contrôleur, décision), avec la F concernée.
+   - A.4 / A.5 : tables, colonnes et routes réelles ; entrées = champs validés par la FormRequest ; erreurs = codes renvoyés par le code lu (422 de validation, 403 de Policy, 429 de throttle…), pas devinés.
+   - Sources entre parenthèses ou backticks : chemins réels (le lint les vérifie).
 
-1. Scaffold le squelette (le tool résout le type vers la bonne trame figée) :
-   `bash ~/.claude/tools/cdc.sh scaffold --type <type> [--out <fichier>.md]`
-   Défaut : `documentation_contractuelle/cahier-des-charges.md` (dossier créé au besoin). Refuse d'écraser sans `--force`.
-2. `fill` : ne rien remplir — le squelette EST le livrable. Rendre quand même le HTML (HTML auto tous types, sauf `--no-html`) : `bash ~/.claude/tools/cdc.sh render --html <fichier>.md`. Signaler l'exemple de référence `~/.claude/skills/cdc/examples/exemple-app-mobile-saisie.md` comme modèle de remplissage.
-3. `public|tech|full|cdcf` : REMPLIR le fichier scaffoldé (Edit) à partir des sources collectées. NE PAS inventer le plan ni ajouter/retirer de section du squelette. Tout champ non dérivable d'une source -> laisser `[À COMPLÉTER]`. En rétro, tracer la source entre parenthèses (ex : `(routes/api.php)`).
-   - `public` : langage métier, zéro jargon (pas de stack/données/archi).
-   - `tech` : dérivé code (rétro) + doc projet.
-   - `full` : 2 parties (fonctionnel puis technique).
-   - User stories (`public` §6, `full` §1.6, `tech` §8) : une US par item de « Parcours et fonctionnalités » (public/full) ou de « Besoins fonctionnels » (tech), jamais d'US sans item source ni d'item sans US. Rôle = un acteur de la table Acteurs. `Dérivée de` cite l'item et sa source. Priorité MoSCoW et critères d'acceptation : seulement s'ils sont dans la source, sinon `[À COMPLÉTER]` (garde-fou n°2).
-   - `cdcf` : exprimer le besoin en FONCTIONS (le QUOI), JAMAIS la solution technique (le COMMENT). Respecter l'enchaînement de la trame : bête à cornes -> environnement (pieuvre/EME) -> fonctions de service (FP/FC) -> caractérisation (critère/niveau/flexibilité) -> hiérarchisation -> contraintes.
+> Doc vierge sans dépenser de token modèle : `cdc.sh scaffold --type fill --html --docx`.
 
-> Doc vierge sans dépenser de token modèle : `cdc.sh scaffold --type <type> --html --docx` produit directement le squelette structuré + ses conversions.
+## Étape 3bis — Diagrammes archify (`cdc`, sauf `--no-diagrams`)
 
-## Étape 3bis — Diagrammes archify (`tech` / `full`, sauf `--no-diagrams`)
-
-Après le remplissage, avant le lint. Un diagramme ne se dessine QUE depuis des faits déjà écrits dans le CDC rempli (garde-fou n°2) : pas de faits -> pas de diagramme, et le dire dans la confirmation finale.
+Après le remplissage. Un diagramme ne se dessine QUE depuis des faits déjà écrits dans le CDC : pas de faits -> pas de diagramme, et le dire dans la confirmation finale.
 
 | Diagramme (type archify) | Faits requis | Inséré sous |
 |---|---|---|
-| `architecture` | composants de la section Architecture / Stack | 2.1 (full) / 1. (tech) Architecture |
-| `workflow` (parcours principal) | items de Parcours (full) ou Besoins fonctionnels (tech) | 1.5 (full) / 7. (tech) |
-| `sequence` (UN flux clé) | endpoints de la table API | 2.4 (full) / 4. (tech) API et intégrations |
-| `lifecycle` (UNE entité à statut) | statuts réels (migration, enum, doc) | 2.3 (full) / 3. (tech) Modèle de données |
+| `architecture` | lignes Architecture / Technologies / Intégrations de §8 | 8. Contraintes techniques et architecture |
+| `workflow` (processus cible) | étapes de §6.1 | 6.1 Processus cible |
+| `sequence` (UN flux clé) | routes A.5 de la fiche concernée | A.5 de cette fiche |
+| `lifecycle` (UNE entité à statut) | statuts réels (migration, enum, doc) | 9.1 Modèle de données |
 
 Par diagramme (`<dir>` = dossier du .md, `<stem>` = son nom sans .md, `A=~/.claude/skills/archify`) :
-1. Écrire `<dir>/<stem>-diagrams/<nom>.json` en suivant le « Fast authoring path » de `$A/SKILL.md` (schéma + un exemple, `meta.quality_profile: "showcase"`, libellés dans la langue du CDC, `meta.locale` omis).
-2. `node $A/bin/archify.mjs validate <type> <json> --quality showcase --json`, réparer selon ses diagnostics, puis `node $A/bin/archify.mjs deliver <type> <json> <dir>/<stem>-diagrams/<nom>.html --quality showcase --json`. Exit != 0 -> ne pas insérer le diagramme, le signaler.
-3. `node ~/.claude/tools/archify-snap.mjs <dir>/<stem>-diagrams/<nom>.html <dir>/<stem>-diagrams/<nom>.png` (PNG du seul diagramme, thème clair).
-4. Lire le PNG (Read) pour constater le rendu, puis insérer sous la section : `![<Titre>](<stem>-diagrams/<nom>.png)` + ligne `[Version interactive](<stem>-diagrams/<nom>.html)`. Chemin relatif au .md : md2html/md2docx l'incluent (image embarquée dans le HTML, le PDF et le docx).
+1. Écrire `<dir>/<stem>-diagrams/<nom>.json` selon le « Fast authoring path » de `$A/SKILL.md` (`meta.quality_profile: "showcase"`, libellés et `meta.legend.entries` dans la langue du CDC).
+2. `node $A/bin/archify.mjs validate <type> <json> --quality showcase --json` (9 contrôles sur 9), réparer selon les diagnostics, puis `node $A/bin/archify.mjs deliver <type> <json> <dir>/<stem>-diagrams/<nom>.html --quality showcase --json`. Exit != 0 -> ne pas insérer, le signaler.
+3. `node ~/.claude/tools/archify-snap.mjs <dir>/<stem>-diagrams/<nom>.html <dir>/<stem>-diagrams/<nom>.png`.
+4. Lire le PNG (Read), puis insérer : `![<Titre>](<stem>-diagrams/<nom>.png)` + `[Version interactive](<stem>-diagrams/<nom>.html)`.
 
-Le dossier `<stem>-diagrams/` est gitignoré par `cdc.sh` (garde-fou 4bis).
+## Étape 3ter — Contre-lecture (OBLIGATOIRE avant le rendu)
+
+Relire le CDC rempli EN ENTIER (Read, pas un résumé) et, pour chaque affirmation de fait, rouvrir sa source :
+- cellule de droits, rôle d'une US, entrée / sortie / erreur d'API, règle de gestion, chiffre (limite, durée, débit) -> la ligne de code ou de doc qui la prouve ;
+- formulation ajoutée de mémoire (contexte, matériel, public, « seul », « aucun ») -> trouvée dans une source, sinon retirée ;
+- ce qui n'a pas de source -> `[À COMPLÉTER]`.
+Corriger avant le lint. Annoncer le nombre de corrections dans la confirmation finale.
 
 ## Étape 4 — Lint, conversions et confirmation
 
-1. GATE anti-dette : `bash ~/.claude/tools/cdc.sh lint <fichier>.md`. Le `render` le relance automatiquement, mais l'observer ici et corriger toute ligne signalée (garde-fou n°4) — ou justifier un faux positif — AVANT le rendu final.
-2. Rendu (HTML + PDF par défaut sauf `--no-html` / `--no-pdf`, `--docx` si demandé) :
-   `bash ~/.claude/tools/cdc.sh render --html [--no-pdf] [--docx] --open <fichier>.md`
-   Constater le PDF : `pdfinfo <fichier>.pdf` (pages) puis `pdftoppm -png -r 60` et Read d'au moins la 1re page et d'une page à diagramme.
-   (le tool lint puis appelle md2html.sh / md2docx.sh ; `--open` ouvre le .docx pour vérifier le rendu, cf. garde-fou n°1). Si `--no-html` ET pas de `--docx` : pas de rendu, le `.md` est le livrable.
-3. **Vault** (sauter si `$CLAUDE_VAULT` n'est pas défini) : référencer le CDC dans la fiche `projets/<fiche>/<fiche>.md`, `<fiche>` trouvée par le chemin du repo dans `## Projets (index + chemins)` de TODO.md (`Grep`). Section `## CDC` (la créer avant le bloc final tags / « Voir aussi » si absente), une ligne par CDC : `- v<version>[, <type>] (YYYY-MM-DD) : `<chemin absolu du .md>` (+ .html)` ; remplacer la ligne du même chemin si elle existe. Puis copier le CDC dans le vault : `bash ~/.claude/tools/rapatrie-livrables.sh --refresh <fiche>` (instantané daté sous `projets/<fiche>/livrables/` + ligne dans son `MANIFEST.md` ; décision du 2026-10-05 : un CDC gitignoré dans son repo ne vivait que sur un poste). Fiche absente : le signaler et demander. Raison : 2026-09-28, 7 CDC existants, un seul cité (en texte) dans sa fiche.
-4. Confirmation finale en une ligne : chemin(s) produit(s) `.md` + `.html` + `.pdf` (+ `.docx` si demandé) + type + mode (rétro / avant-projet / hybride) + nombre d'US + diagrammes insérés / non produits (et pourquoi) + nombre de `[À COMPLÉTER]` + nombre de findings lint restants.
+1. Lint BLOQUANT : `cdc.sh lint <fichier>.md` (dette / audit / WIP, fichier cité introuvable, consigne restante, mot entre chevrons hors backticks — pandoc l'efface : écrire `[mot]`). `render` le relance et s'arrête s'il échoue. Corriger, ou justifier un faux positif par `<!-- lint-ok -->`.
+2. Rendu : `cdc.sh render [--no-docx] [--no-html] [--no-pdf] <fichier>.md`. Constater :
+   - PDF : `pdfinfo` (pages), `pdftoppm -png -r 60`, Read de la 1re page et d'une page à diagramme ;
+   - docx (garde-fou 1) : `cdc.sh docx2pdf <fichier>.docx`, `pdftoppm`, Read de la page de titre, d'une page de section, d'une fiche annexe A. Sans Word ni LibreOffice : `[NO-VERIFY: rendu docx]`.
+3. **Vault** (sauter si `$CLAUDE_VAULT` n'est pas défini) : fiche `projets/<fiche>/<fiche>.md`, `<fiche>` trouvée par le chemin du repo dans `## Projets (index + chemins)` de TODO.md. Section `## CDC` (la créer avant le bloc final tags / « Voir aussi » si absente), une ligne par CDC qui cite le .md ET le .docx entre backticks : ``- v<version> (YYYY-MM-DD) : `<chemin absolu du .md>` ; `<chemin absolu du .docx>` (+ .html, .pdf)`` ; remplacer la ligne du même chemin si elle existe ; rien d'autre entre backticks sur cette ligne. Puis `bash ~/.claude/tools/rapatrie-livrables.sh --refresh <fiche>` : instantané daté des deux fichiers sous `projets/<fiche>/livrables/` (décision du 2026-10-05 : un CDC gitignoré ne vivait que sur un poste). Fiche absente : le signaler et demander.
+4. Confirmation finale en une ligne : chemins `.md` + `.docx` + `.html` + `.pdf`, type, mode (rétro / avant-projet / hybride), nombre de F / fiches / US / RG, diagrammes insérés ou non (et pourquoi), corrections de la contre-lecture, `[À COMPLÉTER]`, résultat du lint, `.gitignore` modifié ou non.
+
+## Mettre à jour le modèle
+
+Quand `Modele_CDC.docx` change (le comparer par `sha256sum` à l'original de l'utilisateur) :
+1. Copier le nouveau modèle dans `templates/Modele_CDC.docx`.
+2. `python3 templates/build-reference.py templates/Modele_CDC.docx templates/reference-cdc.docx` (styles dédoublonnés, style de tableau, Title / Subtitle et Consigne tirés de la mise en forme directe du modèle).
+3. Reporter les changements de plan dans `trames/trame-modele.md` (mêmes niveaux de titres, consignes en `[*…*]{custom-style="Consigne"}`), puis `python3 templates/apply-widths.py templates/Modele_CDC.docx trames/trame-modele.md` (largeurs des 31 tableaux ; un tableau sans correspondance est listé).
+4. Contrôler : `cdc.sh scaffold --type fill --docx`, `cdc.sh docx2pdf`, et comparer les images au modèle exporté de la même façon.
