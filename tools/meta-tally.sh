@@ -23,7 +23,8 @@ dec="$meta/decisions-recurrentes.md"
 # Tags de navigation / structurels exclus du classement cause-racine.
 EXCLUDE='claude|obsidian|INDEX'
 
-tags() { grep -ohE '\[\[[^]]+\]\]' "$@" 2>/dev/null | sed 's/^\[\[//; s/\]\]$//'; }
+# Inline code (`...`) is skipped: Obsidian does not turn a [[link]] written as code into a link
+tags() { sed 's/`[^`]*`//g' "$@" 2>/dev/null | grep -oE '\[\[[^]]+\]\]' | sed 's/^\[\[//; s/\]\]$//'; }
 rank() { grep -viE "^($EXCLUDE)$" | sort | uniq -c | sort -rn | head -n "$topN"; }
 
 echo "== META-TALLY : $meta =="
