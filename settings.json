@@ -193,13 +193,15 @@
     "claude-video": {
       "source": {
         "source": "github",
-        "repo": "bradautomates/claude-video"
+        "repo": "bradautomates/claude-video",
+        "ref": "v0.3.2"
       }
     },
     "humanizer": {
       "source": {
         "source": "github",
-        "repo": "blader/humanizer"
+        "repo": "blader/humanizer",
+        "ref": "v3.1.0"
       }
     }
   },
