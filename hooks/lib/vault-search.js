@@ -41,7 +41,7 @@ const STOP = new Set([
 ]);
 
 // Journaux append-only : une note utile = une SECTION `## ...`, pas le fichier entier.
-const JOURNALS = /^(erreurs|learnings|decisions-recurrentes|archive-(erreurs-)?[0-9]{4})\.md$/;
+const JOURNALS = /^(erreurs|learnings|decisions-recurrentes|archive-(erreurs-|decisions-)?[0-9]{4}(-Q[1-4])?)\.md$/;
 // meta/ = memoire d'incident, infra/ + technos/ = etat et contraintes du parc.
 // tools/ est volontairement exclu : ce sont des docs de reference externes (git,
 // rspack, vscode) qui ne racontent aucun incident vecu et qui, testees le 2026-08-10,

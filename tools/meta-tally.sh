@@ -18,7 +18,7 @@ topN="${2:-15}"
 shopt -s nullglob
 err=("$meta/erreurs.md" "$meta"/archive-erreurs-[0-9]*.md)
 lea=("$meta/learnings.md" "$meta"/archive-[0-9]*.md)
-dec="$meta/decisions-recurrentes.md"
+dec=("$meta/decisions-recurrentes.md" "$meta"/archive-decisions-[0-9]*.md)
 
 # Tags de navigation / structurels exclus du classement cause-racine.
 EXCLUDE='claude|obsidian|INDEX'
@@ -32,7 +32,7 @@ echo "-- volumétrie (entrées ##) --"
 count() { [ $# -gt 0 ] || { echo 0; return; }; cat "$@" 2>/dev/null | grep -cE '^## ' || true; }
 [ -f "${err[0]}" ] && printf "  %-26s %s entrées (dont %s archivées)\n" "erreurs.md" "$(count "${err[@]}")" "$(count "${err[@]:1}")"
 [ -f "${lea[0]}" ] && printf "  %-26s %s entrées (dont %s archivées)\n" "learnings.md" "$(count "${lea[@]}")" "$(count "${lea[@]:1}")"
-[ -f "$dec" ] && printf "  %-26s %s entrées\n" "decisions-recurrentes.md" "$(count "$dec")"
+[ -f "${dec[0]}" ] && printf "  %-26s %s entrées (dont %s archivées)\n" "decisions-recurrentes.md" "$(count "${dec[@]}")" "$(count "${dec[@]:1}")"
 
 echo
 echo "-- TOP $topN causes-racines dans erreurs.md + archives (signal de défaillance -> prochain gate) --"
@@ -40,7 +40,7 @@ if [ -f "${err[0]}" ]; then tags "${err[@]}" | rank | sed 's/^/  /'; else echo "
 
 echo
 echo "-- TOP $topN tags toutes sources (erreurs+learnings+decisions, archives comprises) --"
-tags "${err[@]}" "${lea[@]}" "$dec" | rank | sed 's/^/  /'
+tags "${err[@]}" "${lea[@]}" "${dec[@]}" | rank | sed 's/^/  /'
 
 echo
 echo "-- TAUX D'ECHAPPEMENT par quinzaine (ligne 'Detecte :' des erreurs, format : meta/INDEX.md) --"
@@ -68,6 +68,6 @@ orph=0
 while read -r t; do
   [ -z "$t" ] && continue
   printf '%s\n' "$allnotes" | grep -qixF "$t" || { echo "  [ORPHELIN] $t"; orph=$((orph+1)); }
-done < <(tags "${err[@]}" "${lea[@]}" "$dec" | grep -viE "^($EXCLUDE)$" | sort -u)
+done < <(tags "${err[@]}" "${lea[@]}" "${dec[@]}" | grep -viE "^($EXCLUDE)$" | sort -u)
 [ "$orph" -eq 0 ] && echo "  (aucun)"
 echo "== fin tally =="

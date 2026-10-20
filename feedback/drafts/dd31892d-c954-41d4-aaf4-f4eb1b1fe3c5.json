@@ -1,0 +1,31 @@
+{
+  "draft_id": "dd31892d-c954-41d4-aaf4-f4eb1b1fe3c5",
+  "created_at": "2026-10-19T09:33:36.007Z",
+  "source_session_id": "04035d29-8e10-4290-9efb-5e484688f163",
+  "cwd": "C:\\laragon\\www\\Obsidian",
+  "model": "claude-opus-5-5",
+  "cli_version": "2.1.303",
+  "os": "win32 x64",
+  "request_ids": [
+    "req_011CgBN7zq6oFgJAk5inc8nc",
+    "req_011CgBN8U2xmMyaQHvHCsUm9",
+    "req_011CgBN95skLnkq87jCMJeA5"
+  ],
+  "type": "bug",
+  "title": "Vérification d'un toDo : conclusions tirées de proxys (compteur, ligne de grep, git log) au lieu des sources",
+  "details": "- **What happened:** Demande de vérifier chaque entrée d'un toDo de 92 items. Le modèle a creusé un seul bloc et conclu les autres sur un git log. Il a lu deux `localStorage.removeItem` comme « jeton en localStorage » alors que le jeton est en sessionStorage, et a pris le compteur « 88 op » du démarrage pour le total (92).\n- **What the user said:** \"t'as vérifié que warranty parceque je bosse dessus la ou tu as fait correctement ton travail en verifiant toutes les entrées comme demandé ?\" puis \"c'est quoi ton putain de probleme aujourd hui ? tu merdes systematiquement sur plusieurs dossiers ?\"\n- **Repro:** Demander « vérifie chacune des entrées » sur un toDo multi-projets d'une centaine d'items.\n- **Evidence:** TODO.md du vault, meta/erreurs.md (entrée 2026-10-19), Warranty_quasar/src/stores/authStore.js:8-12",
+  "failure_mode": "overconfidence_and_hallucination",
+  "task_category": "review",
+  "trigger": "model_judgment",
+  "effort": "medium",
+  "thinking_type": "adaptive",
+  "message_count": 420,
+  "assistant_turn_count": 41,
+  "subagent_count": 0,
+  "transcript_ref": {
+    "session_file": "C:\\Users\\fLisowski\\.claude\\projects\\C--laragon-www-Obsidian\\04035d29-8e10-4290-9efb-5e484688f163.jsonl",
+    "message_range": null,
+    "project_dir_key": "C--laragon-www-Obsidian"
+  },
+  "status": "queued"
+}

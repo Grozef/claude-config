@@ -100,6 +100,7 @@ try {
     const parent = pathMod.basename(pathMod.dirname(process.cwd()));
     const myTags = (TMAP[here] || TMAP[parent] || []).map(t => t.toLowerCase());
     const mine = [];
+    let toi = 0;
     // Format PAR PROJET (2026-07-15) : le type est un tag inline [op]/[idee]/[revue]
     // apres la case a cocher, pas un titre de section. On compte les items NON TERMINES :
     // cases vides [ ] ET en cours [~] (2026-07-15 : un item [~] etait invisible a la reprise).
@@ -108,6 +109,7 @@ try {
       if (!m) continue;
       const inProgress = m[1] === '~';
       counts[m[2]]++;
+      if (/^\s*-\s*\[[ ~]\]\s*\[[a-z]+\]\s*\[toi\]/.test(l)) toi++;
       // tag [[x]] compare EN ENTIER aux tags declares pour ce dossier, jamais en prefixe
       const tags = [...l.matchAll(/\[\[([^\]]+)\]\]/g)].map(t => t[1].toLowerCase());
       if (myTags.length && tags.some(t => myTags.includes(t))) {
@@ -116,7 +118,8 @@ try {
     }
     const total = counts.op + counts.idee + counts.revue;
     if (total > 0) {
-      console.log('TODO global : ' + counts.op + ' op | ' + counts.idee + ' idees | ' + counts.revue + ' revues  (/todo)');
+      // Total en tete : le 2026-10-19, « 88 op » a ete recopie comme nombre d'items (93).
+      console.log('TODO global : ' + total + ' items (' + counts.op + ' op, ' + counts.idee + ' idees, ' + counts.revue + ' revues) | ' + toi + ' a toi  (/todo)');
     }
     if (mine.length > 0) {
       console.log('toDo lies a CE projet (a confronter a la "Prochaine etape" de SESSION.md) :');
