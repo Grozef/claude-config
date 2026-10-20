@@ -1,5 +1,5 @@
 {
-  "cleanupPeriodDays": 30,
+  "cleanupPeriodDays": 7,
   "env": {
     "CLAUDE_TELEMETRY_OPTOUT": "1",
     "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "3"
@@ -190,5 +190,6 @@
       "$defaults",
       "Bash(rm:docker/prod/*)"
     ]
-  }
+  },
+  "feedbackDrafts": "off"
 }

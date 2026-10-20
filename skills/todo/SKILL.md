@@ -1,14 +1,14 @@
 ---
 name: todo
 description: |
-  Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done, organise par projet avec tags [op]/[idee]/[revue]. Option `local` : toDo du poste (~/.claude/TODO.md).
+  Gere le toDo global du vault ($CLAUDE_VAULT/TODO.md) depuis n'importe quel projet : add / list / done / verif, organise par projet avec tags [op]/[idee]/[revue] et [moi]/[toi]. Option `local` : toDo du poste (~/.claude/TODO.md).
   TRIGGER when: "/todo", "ajoute au todo", "mes taches en attente", "coche", "todo global", "todo local"
 allowed-tools: Read, Edit, Bash
 effort: low
 ---
 
 # Skill : todo
-# Invocation : /todo [add|list|done] [args]  ·  /todo local [add|list|done] [args]
+# Invocation : /todo [add|list|done|verif] [args]  ·  /todo local [add|list|done] [args]
 
 **Arguments fournis :** $ARGUMENTS
 
@@ -21,7 +21,15 @@ ne jamais inventer de chemin.
 
 - Un bloc `## Projets (index + chemins)` en tête : liste TOUS les projets + chemin réel (incl. hors-www). Reference, pas des taches.
 - Puis un titre `## <projet>` par projet ayant des taches (ex `## projet-a`, `## projet-b`, `## carte / libelle-compose`).
-- Item : `- [ ] [type] (YYYY-MM-DD) texte [[projet]]` — `type` ∈ {op, idee, revue}, placé juste après la case.
+- Item : `- [ ] [type] [qui] (YYYY-MM-DD) texte [[projet]] [verif YYYY-MM-DD]` — `type` ∈ {op, idee, revue},
+  placé juste après la case (le hook de démarrage le lit à cette place) ; `qui` juste après le type :
+  `[toi]` = la suite dépend de l'utilisateur (observation écran / appareil / prod / AWS, tiers, décision,
+  commit, push ou déploiement qu'il lance), `[moi]` = faisable par Claude depuis le poste (code, doc, tests).
+- `texte` = l'ACTION RESTANTE, une phrase, 200 caractères au plus. PAS d'annotation inline `[maj ...]` /
+  `[verif ... : texte]` (2026-10-19 : 38 lignes devenues des journaux, jusqu'à 2 257 car., toDo invérifiable
+  en un passage). Quand un item avance, sa ligne est RÉÉCRITE (nouvelle action restante) ; le détail va dans
+  `$CLAUDE_VAULT/sessions/<repo>/<date>.md`. `[verif YYYY-MM-DD]` = date de la dernière vérification RÉELLE
+  (artefact regardé), absent si jamais vérifié ; ne jamais le redater sans artefact.
 - Plus récent en haut de chaque bloc projet. Les faits (`- [x]`) vivent dans `$CLAUDE_VAULT/TODO-archive.md`,
   sous le même titre `## <projet>` (depuis 2026-10-05 : les cochés pesaient 102 Ko sur 139).
 
@@ -33,38 +41,41 @@ une structure supposée), jamais le fichier entier : `grep -n '^## ' TODO.md` (B
 
 ## Sous-commandes
 
-### `add <projet> <type> "<texte>"`
-`<type>` ∈ {op, idee, revue}. Exemple : `/todo add projet-a op "corriger le récap"`
+### `add <projet> <type> <moi|toi> "<texte>"`
+`<type>` ∈ {op, idee, revue}. Exemple : `/todo add projet-a op moi "corriger le récap"`
+`<qui>` absent : le déduire de la définition ci-dessus et le dire dans la confirmation. Texte > 200 car. : le raccourcir.
 1. Date du jour : `date +%Y-%m-%d` (Bash).
 2. Lister les titres (règle commune). Chercher le titre `## <projet>` (insensible casse ; le projet peut avoir un
    libellé composé comme `## carte / libelle-compose` — matcher sur le mot-clé).
-3. Si le titre existe : Edit, insérer `- [ ] [<type>] (YYYY-MM-DD) <texte> [[<projet>]]`
+3. Si le titre existe : Edit, insérer `- [ ] [<type>] [<qui>] (YYYY-MM-DD) <texte> [[<projet>]]`
    **juste après** la ligne de titre (= plus récent en haut du projet).
 4. Si le titre n'existe PAS : créer `## <projet>` + l'item, inséré **avant** la ligne `---` finale
    qui précède `#todo` (ou avant `## global` s'il existe). Vérifier au passage que le projet figure
    dans l'index en tête ; l'y ajouter (ligne `- <projet> — <chemin>`) s'il manque.
 5. Confirmer : `Ajouté [projet-a/op] : corriger le récap`.
 
-### `list [projet|type]`
-Sans argument → tous les items non cochés, groupés par projet. Avec un nom de projet → seulement
-ce projet. Avec un type (op|idee|revue) → seulement les items de ce type, tous projets.
-1. Lire le bloc du projet (règle commune) ; sans nom de projet, Read à partir du premier titre qui suit l'index.
-2. Afficher les items **non cochés** (`- [ ]`) numérotés par projet (repartir de 1 par projet),
-   dans l'ordre du fichier. Ignorer le bloc index.
-3. Format dense :
-   ```
-   [projet-a]
-   1. [op] (2026-07-14) verifier le graphe de la page resultats
-   2. [op] (2026-07-04) phase 4 seuil T-5
-   [projet-b]
-   1. [op] (2026-07-05) rebasculer cypress.yml ref main
-   ```
-   Projet sans item non coché : ne pas l'afficher (il reste dans l'index).
+### `list [projet|toi|moi]`
+Les chiffres et la numérotation sortent de `bash ~/.claude/tools/todo-summary.sh`, jamais d'un comptage à la main
+(2026-10-19 : le compteur « op » du démarrage recopié comme total). Afficher sa sortie TELLE QUELLE, sans commentaire.
+- Sans argument → `todo-summary.sh` : une ligne par projet (ouverts, plus ancien, à toi / à moi, sans tag). PAS le
+  détail des items : la liste complète (90+ items) n'est jamais affichée d'un bloc.
+- Avec un nom de projet → `todo-summary.sh <projet>` : items du bloc numérotés (c'est la numérotation de `done`).
+- `toi` ou `moi` → `todo-summary.sh toi|moi` : items de ce tag, tous projets.
+
+### `verif <projet>`
+Confronte les items d'UN projet à leur source. Jamais plusieurs projets dans le même appel.
+1. `todo-summary.sh <projet>` pour la liste numérotée.
+2. Pour CHAQUE item : l'artefact qui établit son état (git du dépôt, fichier:ligne lu dans son contexte, base locale,
+   run CI). Un `git log` de dépôt n'établit pas l'état d'un item ; une ligne de grep se lit avec ses voisines.
+3. Rendre un tableau `n | item (court) | artefact regardé | constat` ; sans artefact possible (écran, appareil,
+   prod, tiers) : `non vérifié — <ce qui manque>`, jamais « inchangé ».
+4. Items établis faits : proposer `done` ; items avancés : proposer la ligne réécrite avec `[verif <aujourd'hui>]`.
+   Appliquer après accord de l'utilisateur.
 
 ### `done <projet> <n>`
 Coche le n-ième item NON coché du projet. Exemple : `/todo done projet-b 1`
 1. Lire le bloc du projet (règle commune).
-2. Sous le titre `## <projet>`, compter les `- [ ]` ; cibler le n-ième.
+2. `n` = numérotation de `todo-summary.sh <projet>` (items `- [ ]` et `- [~]`) ; cibler le n-ième.
 3. Edit de TODO.md : retirer la ligne de l'item.
 4. Edit de `TODO-archive.md` : insérer l'item juste après le titre `## <projet>` (le créer en fin de fichier
    s'il manque), `- [ ]` -> `- [x]`, texte + tag de type inchangés, suffixe ` — fait YYYY-MM-DD`.
@@ -91,6 +102,6 @@ Même règle commune : Read avant tout Edit, confirmation en une ligne.
 
 ## Notes
 - Ne jamais réécrire tout le fichier : Edit ciblé uniquement (préserve frontmatter, index, ordre).
-- Le compteur op/idee/revue au démarrage (`session-start.js`) lit les tags `[type]` inline, pas les
-  titres de section — ne pas retirer le tag de type d'un item.
+- Le compteur au démarrage (`session-start.js`) et `todo-summary.sh` lisent les tags `[type]` puis `[qui]`
+  inline, pas les titres de section — ne pas retirer ni intervertir ces tags.
 - `TODO-archive.md` ne se purge pas sans demande explicite.

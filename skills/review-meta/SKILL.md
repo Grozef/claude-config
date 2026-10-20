@@ -26,7 +26,7 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 2. **Analyser** pour chaque fichier :
    - Compter les entrees totales (`## YYYY-MM-DD` headings)
    - Identifier les entrees > 90 jours (date dans le titre vs aujourd'hui)
-   - Detecter doublons potentiels par titre similaire (Levenshtein < 5 ou substring match), archives comprises : `grep -h '^## ' meta/archive-erreurs-*.md` pour erreurs, `meta/archive-[0-9]*.md` pour learnings (titres seuls, sans lire les archives en entier)
+   - Detecter doublons potentiels par titre similaire (Levenshtein < 5 ou substring match), archives comprises : `grep -h '^## ' meta/archive-erreurs-*.md` pour erreurs, `meta/archive-[0-9]*.md` pour learnings, `meta/archive-decisions-*.md` pour decisions (titres seuls, sans lire les archives en entier)
    - Detecter redondances thematiques (meme tag wikilink utilise > 3 fois sur des entrees proches)
 
 2bis. **Tally de recurrence (GATE deterministe — sortie dans le contexte AVANT toute conclusion) :**
@@ -37,7 +37,8 @@ allowed-tools: Read, Edit, Write, Glob, Bash
    `awk -F'reason="' '{split($2,a,"\""); print a[1]}' ~/.claude/.no-verify.log | sort | uniq -c | sort -rn | head -10`
    Chaque `[NO-VERIFY:]` est un aveu horodate, pas une dispense : le fichier n'etait relu par RIEN
    jusqu'au 2026-09-04 (152 entrees accumulees). Regle : toute raison recurrente (>= 3 fois) ou toute
-   entree de plus de 7 jours devient un item `[op]` date dans `TODO.md` via `/todo add`, formule comme
+   entree de plus de 7 jours devient un item `[op]` date dans `TODO.md` via `/todo add` (tag `[moi]` ou
+   `[toi]` selon qui peut produire l'artefact), formule comme
    la verification a faire (« produire la capture du globe », pas « revoir le NO-VERIFY »).
    Cause : un `[NO-VERIFY: pas de capture du globe]` a ete recopie de checkpoint en checkpoint pendant
    des semaines, faux des la recopie, sous lequel six livraisons ont ete annoncees vertes sur la
@@ -80,19 +81,19 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 ```
 
 4. **Demander confirmation** avant toute modification :
-   - "Archiver les N entrees > 90j vers `meta/archive-YYYY.md` ? (y/n)"
+   - "Archiver les N entrees anterieures au mois precedent vers les archives trimestrielles (voir Garde-fous) ? (y/n)"
    - "Fusionner les doublons listes ? (y/n)"
 
 5. **Si OK** :
-   - Creer/append `meta/archive-YYYY.md` avec les entrees archivees
+   - Creer/completer l'archive du TRIMESTRE de chaque entree (`archive-erreurs-YYYY-Qn.md`, `archive-YYYY-Qn.md`, `archive-decisions-YYYY-Qn.md`)
    - Retirer ces entrees du fichier source (Edit precis, pas Write complet)
    - Pour les doublons : fusionner manuellement (Edit) en gardant le plus recent + ajoutant les details du plus ancien
 
-6. **Confirmer** : `meta/ reviewed → erreurs: -N, learnings: -M, decisions: -P. Archive: meta/archive-2026.md`
+6. **Confirmer** : `meta/ reviewed → erreurs: -N, learnings: -M, decisions: -P. Archives: meta/archive-*YYYY-Qn.md`
 
 ## Garde-fous
 
-- **Spillover par AGE** de `erreurs.md` et `learnings.md` (depuis 2026-10-05 ; l'ancien seuil de ~400 lignes etait depasse d'un facteur 3) : proposer d'archiver les entrees anterieures au mois precedent (garder le mois courant et le precedent) vers `meta/archive-erreurs-YYYY.md` pour erreurs, `meta/archive-YYYY.md` pour learnings, plus recent en haut de l'archive. Trier sur la DATE de l'en-tete `## YYYY-MM-DD`, pas sur la position, backup avant, verifier qu'aucune entree `## ` n'est perdue (somme garde+archive = avant). Une entree archivee reste lue partout : le rappel automatique (`hooks/lib/vault-search.js`, regex `JOURNALS`) et `meta-tally.sh` prennent actif + archives. Ne pas donner un autre nom a une archive sans mettre ces deux-la a jour.
+- **Spillover par AGE** de `erreurs.md`, `learnings.md` (depuis 2026-10-05 ; l'ancien seuil de ~400 lignes etait depasse d'un facteur 3) et `decisions-recurrentes.md` (depuis 2026-10-19) : proposer d'archiver les entrees anterieures au mois precedent (garder le mois courant et le precedent) vers l'archive du TRIMESTRE de l'entree (Q1 = janvier-mars) : `meta/archive-erreurs-YYYY-Qn.md` pour erreurs, `meta/archive-YYYY-Qn.md` pour learnings, `meta/archive-decisions-YYYY-Qn.md` pour decisions, plus recent en haut de l'archive. Les marqueurs `> [... archivees dans ...]` en pied des fichiers actifs nomment les archives a jour. Trier sur la DATE de l'en-tete `## YYYY-MM-DD`, pas sur la position, backup avant, verifier qu'aucune entree `## ` n'est perdue (somme garde+archive = avant). Une entree archivee reste lue partout : le rappel automatique (`hooks/lib/vault-search.js`, regex `JOURNALS`) et `meta-tally.sh` prennent actif + archives. Ne pas donner un autre nom a une archive sans mettre ces deux-la a jour.
 - Si fichier source < 50 lignes → pas d'archivage proposé (pas assez de matiere)
 - Orphelins : `meta-tally.sh` liste les wikilinks sans note `concepts/` ; creer le stub manquant plutot que retirer le lien.
 - Si entree contient un wikilink vers un projet `[[projet-actif]]` → ne PAS archiver meme si > 90j (matiere active)
