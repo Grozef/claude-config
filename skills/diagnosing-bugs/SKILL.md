@@ -1,6 +1,8 @@
 ---
 name: diagnosing-bugs
-description: Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
+description: |
+  Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
+  TRIGGER when: "debug", "debugge", "diagnostique", "trouve le bug", "pourquoi ca plante", "ca marche pas", "ca ne marche plus", "erreur 500", "exception", "le test echoue", "c'est lent", "regression"
 ---
 
 # Diagnosing Bugs

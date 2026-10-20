@@ -1,6 +1,8 @@
 ---
 name: tdd
-description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
+description: |
+  Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
+  TRIGGER when: "tdd", "teste d'abord", "test d'abord", "ecris le test avant", "en test-first", "red green", "tests d'integration", "couvre ca par des tests avant de coder"
 ---
 
 # Test-Driven Development
