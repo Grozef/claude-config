@@ -183,6 +183,25 @@
       }
     ]
   },
+  "enabledPlugins": {
+    "watch@claude-video": true,
+    "humanizer@humanizer": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-video": {
+      "source": {
+        "source": "github",
+        "repo": "bradautomates/claude-video"
+      }
+    },
+    "humanizer": {
+      "source": {
+        "source": "github",
+        "repo": "blader/humanizer"
+      }
+    }
+  },
+  "feedbackDrafts": "off",
   "autoUpdatesChannel": "latest",
   "switchModelsOnFlag": false,
   "autoMode": {
@@ -190,6 +209,5 @@
       "$defaults",
       "Bash(rm:docker/prod/*)"
     ]
-  },
-  "feedbackDrafts": "off"
+  }
 }
