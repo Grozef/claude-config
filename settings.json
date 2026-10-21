@@ -213,5 +213,6 @@
       "$defaults",
       "Bash(rm:docker/prod/*)"
     ]
-  }
+  },
+  "tui": "fullscreen"
 }
