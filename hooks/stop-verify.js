@@ -88,7 +88,6 @@ const toolEvents = [];
 // Un message role=user porteur d'un bloc text = une vraie prise de parole ; les
 // tool_result reviennent aussi en role=user, d'ou le filtre sur le type de bloc.
 let turnStart = 0;
-const MARQUE_2I = 'PASSE DE RELECTURE (gate 2i)';
 let lastAssistantText = '';
 let handback = (isHandback && j.tool_input && typeof j.tool_input.message === 'string') ? j.tool_input.message : '';
 
@@ -101,10 +100,6 @@ for (const line of lines) {
     // Le feedback d'un hook Stop partage cette forme : il ne rouvre pas de tour.
     const isPrompt = t => !e.isMeta && !/^Stop hook feedback/.test(t || '');
     if (e.message && e.message.role === 'user' && typeof content === 'string' && isPrompt(content)) turnStart = toolEvents.length;
-    // Feedback du gate 2i deja recu : repere pose dans la suite des outils, pour savoir ce qui l'a SUIVI.
-    // Forme relevee sur 152 feedbacks reels (2026-10-05) : role user, isMeta true, content chaine.
-    if (e.message && e.message.role === 'user' && typeof content === 'string'
-      && /^Stop hook feedback/.test(content) && content.includes(MARQUE_2I)) toolEvents.push({ name: 'Feedback2i', kind: 'other', target: '', full: '' });
     if (!Array.isArray(content)) continue;
     const role = e.message.role;
     if (role === 'user' && content.some(c => c && c.type === 'text' && isPrompt(c.text))) turnStart = toolEvents.length;
@@ -208,43 +203,6 @@ Bypass legitime : si verif impossible (changement purement declaratif, doc pure,
   [NO-VERIFY: <raison breve>]
 `);
     blocked('1');
-  }
-}
-
-// --- Gate 2i : CODE produit ce tour sans passe de relecture (2026-10-05) ---
-// 35 des 95 erreurs classees du 14/09 au 05/10 ont ete trouvees par la reverification demandee ou par
-// l'utilisateur ; pour le code, tests verts a la livraison a chaque fois. Le 2h ne couvre que les .md.
-// Le PREMIER arret d'un tour qui a ecrit du code est bloque une fois : la passe que l'utilisateur
-// declenchait a la main tourne avant le message final. Passe quand un feedback 2i POSTERIEUR a la
-// derniere ecriture de code du tour est suivi d'une verification. Du code ecrit apres une passe en
-// redemande donc une : sans cela, dans un tour long, seul le premier arret etait couvert (2026-10-05,
-// le garde de commit ecrit 9 minutes apres la passe n'en a eu aucune). Pas de bloc de forme exige (le 2h a montre qu'il se remplit de memoire). Non neutralise par
-// [NO-VERIFY:]. Session principale seulement. Angle mort assume : code ecrit par Bash/PowerShell.
-// Hors code : donnees et configuration (.json, .conf, .excalidraw), en plus des textes.
-const isCode = e => ['Edit', 'Write', 'NotebookEdit'].includes(e.name)
-  && !/\.(md|txt|log|csv|jsonl|json|conf|excalidraw)$/i.test(e.target)
-  && !/[\/\\]\.claude[\/\\]plans[\/\\]|[\/\\]scratchpad[\/\\]/i.test(e.target);
-const codeDuTour = [...new Set(turnEvents.filter(isCode).map(e => e.target.replace(/\\/g, '/')))];
-if (!agentTranscript && codeDuTour.length) {
-  const dernierCode = turnEvents.map(isCode).lastIndexOf(true);
-  const fb = turnEvents.findIndex((e, i) => i > dernierCode && e.name === 'Feedback2i');
-  if (fb === -1 || !turnEvents.slice(fb + 1).some(e => e.kind === 'verify')) {
-    const FRONT = /\.(vue|[jt]sx|s?css|html|blade\.php)$/i;
-    const TEST = /[\/\\](tests?|__tests__|cypress|e2e)[\/\\]|[.-](test|spec|cy)\.[a-z]+$|[\/\\]test-[^\/\\]+$/i;
-    const surfaces = new Set();
-    for (const f of codeDuTour) {
-      if (TEST.test(f)) surfaces.add('test-probant');
-      else if (FRONT.test(f)) { surfaces.add('visuel'); surfaces.add('changement-partage'); }
-      else { surfaces.add('changement-partage'); surfaces.add('valeur-limite'); surfaces.add('feature-runtime'); }
-    }
-    process.stderr.write(MARQUE_2I + ' :\n'
-      + 'Code ecrit ce tour :\n' + codeDuTour.map(f => '  ' + f).join('\n') + '\n\n'
-      + 'Avant le message final, cherche a REFUTER ce que tu livres, comme si l utilisateur venait de\n'
-      + 'demander « verifie ce que tu viens de livrer ». Pour chaque surface ci-dessous, produis\n'
-      + 'l artefact ; ce que tu trouves se corrige maintenant, pas dans le message.\n'
-      + [...surfaces].map(protocole).join('')
-      + '\nUn controle hors d atteinte s ecrit [NO-VERIFY: <ce que je n ai pas pu observer>] dans le message.\n');
-    blocked('2i');
   }
 }
 

@@ -1,6 +1,6 @@
 # Règles globales
 
-Application : 10 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
+Application : 9 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
 Ce fichier dit QUOI faire ; `~/.claude/verification-protocol.md` dit COMMENT le prouver.
 
 ## Pas de supposition — voir la source

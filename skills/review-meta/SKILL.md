@@ -52,8 +52,9 @@ allowed-tools: Read, Edit, Write, Glob, Bash
 2quinquies. **Taux d'echappement (depuis le 2026-10-05) :** bloc « TAUX D'ECHAPPEMENT » de la sortie de
    `meta-tally.sh` (ligne `Detecte :` des erreurs, format dans `meta/INDEX.md`). Une entree d'erreur sans
    cette ligne se classe a la lecture avant de conclure. Base : 35 echappees sur 95 du 2026-09-14 au
-   2026-10-05. Le gate 2i (passe de relecture sur le code) se juge sur ce taux et sur ses lignes `gate=2i`
-   de `.gate-blocks.log` : s'il ne baisse pas a la quinzaine suivante, proposer le retrait du gate.
+   2026-10-05. Le gate 2i (passe de relecture sur le code), juge sur ce taux, a ete retire le 2026-10-21 sur
+   decision de l'utilisateur (35 % du 16 au 30/09, 26 % du 01 au 15/10 avec le gate pose le 05/10, 45 % sur 11 entrees
+   depuis le 16/10 : pas de baisse durable).
 
 3. **Rapport compact** au format :
 ```
