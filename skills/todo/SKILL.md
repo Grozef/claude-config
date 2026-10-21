@@ -65,6 +65,9 @@ Les chiffres et la numérotation sortent de `bash ~/.claude/tools/todo-summary.s
 ### `verif <projet>`
 Confronte les items d'UN projet à leur source. Jamais plusieurs projets dans le même appel.
 1. `todo-summary.sh <projet>` pour la liste numérotée.
+1b. Avant tout item : `ls` du chemin donné par l'index et lecture de la dernière `sessions/<repo>/<date>.md` du projet. Chemin absent
+   ou session qui cite un autre dépôt (ex. monorepo) : corriger d'abord l'index et les items qui visent l'ancien dépôt
+   (incident 2026-10-21 : items warranty vérifiés dans les 2 dépôts remplacés la veille par `www/Warranty`).
 2. Pour CHAQUE item : l'artefact qui établit son état (git du dépôt, fichier:ligne lu dans son contexte, base locale,
    run CI). Un `git log` de dépôt n'établit pas l'état d'un item ; une ligne de grep se lit avec ses voisines.
 3. Rendre un tableau `n | item (court) | artefact regardé | constat` ; sans artefact possible (écran, appareil,
