@@ -22,9 +22,9 @@
 #   cdc.sh inventory <path>
 #       GATE doc : liste TOUTE la doc (*.md, toute profondeur, hors vendor/node_modules/build)
 #       + dossiers docs/doc/toDo/.scribe.
-#   cdc.sh lint <f.md> [dépôt source ...]
-#       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, fichier cité
-#       introuvable dans le dépôt du CDC et ses dépôts sources (YAML `sources:` ou arguments), consigne du modèle restée dans un CDC rempli, mot entre
+#   cdc.sh lint <f.md>
+#       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, référence de
+#       source dans le texte (chemin de fichier, Classe::méthode), consigne du modèle restée dans un CDC rempli, mot entre
 #       chevrons hors backticks (pandoc le prend pour une balise et l'efface).
 #
 # Trame unique depuis le 2026-10-16 (calque de templates/Modele_CDC.docx) :
@@ -152,13 +152,11 @@ inventory() {
   echo "== fin inventaire =="
 }
 
-# GATE BLOQUANT — dette/audit/WIP, sources citées introuvables, consignes restantes (cdc_lint.py).
+# GATE BLOQUANT — dette/audit/WIP, références de source dans le texte, consignes restantes (cdc_lint.py).
 lint() {
-  local file="${1:?lint: fichier .md requis}"; shift
+  local file="${1:?lint: fichier .md requis}"
   [ -f "$file" ] || die "lint: introuvable: $file"
-  local extra=() s
-  for s in "$@"; do extra+=("$(winpath "$s")"); done
-  "$PY" "$(winpath "$tools/cdc_lint.py")" "$(winpath "$file")" "${extra[@]}"
+  "$PY" "$(winpath "$tools/cdc_lint.py")" "$(winpath "$file")"
 }
 
 # PDF d'un docx, pour regarder son rendu tel que Word le met en page.
@@ -314,7 +312,8 @@ case "$cmd" in
     inventory "${1:?inventory: chemin requis}"
     ;;
   lint)
-    lint "${1:?lint: fichier .md requis}" "${@:2}"
+    [ $# -le 1 ] || die "lint: un seul fichier .md attendu (les dépôts sources ne sont plus lus)"
+    lint "${1:?lint: fichier .md requis}"
     ;;
   ""|-h|--help)
     grep '^#' "$0" | sed 's/^# \{0,1\}//'

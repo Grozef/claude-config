@@ -18,7 +18,7 @@ Outils (tous via `bash ~/.claude/tools/cdc.sh <commande>`) : `inventory`, `scaff
 ## Garde-fous (non négociables)
 
 1. **docx sur le modèle.** Le .docx sort par défaut de `cdc.sh render` (reference-doc du modèle : styles, en-tête au titre du YAML, pied « Page X / Y », largeurs de colonnes). Constater le rendu avant livraison : `cdc.sh docx2pdf <f.docx>` (Word sous Windows, LibreOffice ailleurs), `pdftoppm`, puis regarder les images (cf. feedback-cdc-approach).
-2. **Zéro exigence inventée.** Chaque ligne trace vers une source réelle (code lu, doc fournie, réponse utilisateur). Toute info non dérivable -> `[À COMPLÉTER]` ou question. Deux contrôles : la contre-lecture (Étape 3ter, obligatoire) et le lint, qui refuse tout fichier cité introuvable dans le dépôt. Raison : 2026-10-16, CDC Inspection livré avec 20 erreurs (RACI inventée, droits faux, formes d'API de tête), vues seulement à la relecture demandée.
+2. **Zéro exigence inventée.** Chaque ligne trace vers une source réelle (code lu, doc fournie, réponse utilisateur). Toute info non dérivable -> `[À COMPLÉTER]` ou question. Le contrôle est la contre-lecture (Étape 3ter, obligatoire) : elle rouvre chaque source, qui n'est PAS citée dans le CDC (remis au client, qui ne peut pas les vérifier : décision du 2026-10-21 ; le lint bloque les chemins de fichiers et les `Classe::méthode` restés dans le texte, la contre-lecture le reste). Raison : 2026-10-16, CDC Inspection livré avec 20 erreurs (RACI inventée, droits faux, formes d'API de tête), vues seulement à la relecture demandée.
 3. **La doc D'ABORD — interdiction de remplir sur des résumés.** Avant d'écrire une ligne, l'inventaire de l'Étape 2.0 est OBLIGATOIRE pour CHAQUE source. Remplir à partir des seuls `CONTEXT.md` / `README` / survol de code = supposition interdite (incident 2026-06-23 : demi-session perdue). Le code ne fait que compléter la doc.
 4. **Un CDC = des EXIGENCES, pas un audit.** Jamais de dette technique, findings d'audit, vulnérabilités, bugs connus ni limitations du code existant, même en rétro, même si la doc les contient. La sécurité s'exprime en exigences (auth, RGPD). Le lint bloque ce vocabulaire ; un faux positif se justifie par `<!-- lint-ok -->` en fin de ligne.
 5. **CDC généré hors git, sauf s'il est déjà versionné.** `cdc.sh` ajoute `<out>.md/.html/.docx/.pdf` et `<stem>-diagrams/` au `.gitignore` du repo englobant, et le dit (« .gitignore MODIFIÉ ») : le signaler à l'utilisateur. Un CDC déjà suivi par git (choix du projet, ex. LumiSafe) n'est pas touché.
@@ -60,7 +60,7 @@ Puis LIRE cette doc et déclarer les fichiers lus. Elle est la source de vérit�
 2. `fill` : ne rien remplir, le squelette EST le livrable. Rendre : `cdc.sh render <fichier>.md`.
 3. `cdc` : arrêter la liste des fonctionnalités (§6.2), puis générer leurs fiches : `cdc.sh fiches <fichier>.md "F1=Nom" "F2=Nom" …` (une fiche annexe A par F, dans l'ordre de §6.2, saut de page et largeurs compris). Ne jamais recopier le bloc annexe à la main.
 4. Remplir (Edit) sans ajouter ni retirer de section ou de colonne :
-   - YAML `title:` = nom du projet (reporté dans l'en-tête du docx). CDC multi-sources (autre dépôt que celui du CDC) : lister chaque dépôt en chemin absolu sous `sources:` (liste YAML) ; le lint y cherche les fichiers cités. Identification : Version `v0.1 — <date du jour>`, Statut `Version de travail`, Auteurs et Destinataires `[À COMPLÉTER]` sauf source. Suivi des versions : une ligne v0.1, « Création ». Validation : cellules vides (à signer).
+   - YAML `title:` = nom du projet (reporté dans l'en-tête du docx). Identification : Version `v0.1 — <date du jour>`, Statut `Version de travail`, Auteurs et Destinataires `[À COMPLÉTER]` sauf source. Suivi des versions : une ligne v0.1, « Création ». Validation : cellules vides (à signer).
    - Chaque consigne `[*…*]{custom-style="Consigne"}` est REMPLACÉE par le contenu puis supprimée ; sans source, elle laisse place à `[À COMPLÉTER]`. Le lint refuse une consigne restante dans un CDC rempli.
    - Sans source (rétro) : planning et estimations (§11), gouvernance (§13), risques (§14), maintenance (§15), RACI (§5.1), validation -> `[À COMPLÉTER]`. Jamais d'estimation, de lettre RACI ni de droit déduit.
    - Lignes de séparation des tableaux (`|----|---------|`) : elles portent les largeurs du modèle, ne pas les modifier.
@@ -71,7 +71,7 @@ Puis LIRE cette doc et déclarer les fichiers lus. Elle est la source de vérit�
    - §6.3 : au moins une US par F, jamais d'US sans F. Rôle = un acteur de §5, et seulement un rôle qui a le droit (§5). Critère d'acceptation tiré d'une source lue (doc, décision, test dont on a lu le contenu), sinon `[À COMPLÉTER]`.
    - §6.4 et A.3 : règles réelles (FormRequest, enum, contrôleur, décision), avec la F concernée.
    - A.4 / A.5 : tables, colonnes et routes réelles ; entrées = champs validés par la FormRequest ; erreurs = codes renvoyés par le code lu (422 de validation, 403 de Policy, 429 de throttle…), pas devinés.
-   - Sources entre parenthèses ou backticks : chemins réels (le lint les vérifie).
+   - Aucune référence de source dans le texte : ni chemin de fichier (`routes/api.php`, `DECISIONS.md`), ni `Classe::méthode`, ni date de décision interne. Le CDC décrit l'exigence ; ses preuves restent dans la contre-lecture. Le lint bloque les chemins de fichiers (extensions de code et de doc) et les `Classe::méthode` ; les dates de décision, `.env`, `Dockerfile` et noms de classe seuls ne sont écartés que par la contre-lecture. Les liens des diagrammes (`![…](<stem>-diagrams/…)`) ne sont pas des sources.
 
 > Doc vierge sans dépenser de token modèle : `cdc.sh scaffold --type fill --html --docx`.
 
@@ -102,7 +102,7 @@ Corriger avant le lint. Annoncer le nombre de corrections dans la confirmation f
 
 ## Étape 4 — Lint, conversions et confirmation
 
-1. Lint BLOQUANT : `cdc.sh lint <fichier>.md` (dette / audit / WIP, fichier cité introuvable, consigne restante, mot entre chevrons hors backticks — pandoc l'efface : écrire `[mot]`). `render` le relance et s'arrête s'il échoue. Corriger, ou justifier un faux positif par `<!-- lint-ok -->`.
+1. Lint BLOQUANT : `cdc.sh lint <fichier>.md` (dette / audit / WIP, référence de source dans le texte, consigne restante, mot entre chevrons hors backticks — pandoc l'efface : écrire `[mot]`). `render` le relance et s'arrête s'il échoue. Corriger, ou justifier un faux positif par `<!-- lint-ok -->`.
 2. Rendu : `cdc.sh render [--no-docx] [--no-html] [--no-pdf] <fichier>.md`. Constater :
    - PDF : `pdfinfo` (pages), `pdftoppm -png -r 60`, Read de la 1re page et d'une page à diagramme ;
    - docx (garde-fou 1) : `cdc.sh docx2pdf <fichier>.docx`, `pdftoppm`, Read de la page de titre, d'une page de section, d'une fiche annexe A. Sans Word ni LibreOffice : `[NO-VERIFY: rendu docx]`.
