@@ -33,28 +33,34 @@ wa() { printf '%s\n' "$@" > "$TMP/$1.multi"; mv "$TMP/$1.multi" "$TMP/$1"; }
 # Briques JSONL (apostrophe/accents REELS : les regex 2a/2b en dependent)
 TXT='{"message":{"role":"assistant","content":[{"type":"text","text":"%s"}]}}'
 TUSE='{"message":{"role":"assistant","content":[{"type":"tool_use","name":"%s","input":%s}]}}'
-# Feedback du gate 2i deja recu. Enveloppe COPIEE d'un feedback reel de stop-verify.sh (transcript du
-# 2026-10-05, 152 feedbacks de cette forme) : type user, isMeta true, content CHAINE prefixee du hook.
-FB2I='{"type":"user","isMeta":true,"message":{"role":"user","content":"Stop hook feedback:\n[bash ~/.claude/hooks/stop-verify.sh]: PASSE DE RELECTURE (gate 2i) :\nCode ecrit ce tour :\n  /c/x.js"}}'
-# Passe de relecture deja faite : sans elle, tout cas qui edite du code s'arrete au 2i avant son gate.
-passe2i() { printf '%s\n' "$FB2I"; printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; }
 
 # --- Gate 1 : production non verifiee ---
 printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}' > "$TMP/g1a"
 run "1  Edit seul sans verif        " "$TMP/g1a" 2 1
 
 { printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i; } > "$TMP/g1b"
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; } > "$TMP/g1b"
 run "1  Edit + Read (verif)         " "$TMP/g1b" 0
 
 # Redirection testee hors quotes (producer.js, 2026-09-14)
 { printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
   printf "$TUSE\n" "Bash" '{"command":"grep -n '"'"'^[<>]'"'"' /c/x.js"}'; } > "$TMP/g1c"
 run "1  grep '^[<>]' n'est pas prod " "$TMP/g1c" 0
 
 printf "$TUSE\n" "Bash" '{"command":"echo x > /c/out.txt"}' > "$TMP/g1d"
 run "1  redirection reelle sans verif" "$TMP/g1d" 2
+
+# Une verification ne couvre que ce qui la precede : l'ecriture suivante en redemande une
+{ printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
+  printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; } > "$TMP/g1e"
+run "1  Edit apres verif, sans verif" "$TMP/g1e" 2 1
+
+# NotebookEdit porte notebook_path, pas file_path : le message doit le nommer
+printf "$TUSE\n" "NotebookEdit" '{"notebook_path":"/c/n.ipynb","new_source":"x"}' > "$TMP/g1f"
+run "1  NotebookEdit sans verif     " "$TMP/g1f" 2 1
+if echo "{\"transcript_path\":\"$TMP/g1f\"}" | node "$HOOK" 2>&1 >/dev/null | grep -q 'NotebookEdit: /c/n.ipynb'; then echo "[OK]  1  nomme le notebook"; pass=$((pass+1));
+else echo "[x]   1  ne nomme pas le notebook"; fail=$((fail+1)); fi
 
 # --- Gate 2a : negation d'existence nue ---
 printf "$TXT\n" "Ce fichier n'existe pas." > "$TMP/g2a"
@@ -81,12 +87,12 @@ run "2c CI vert + npm test          " "$TMP/g2c2" 0
 
 # --- Gate 2e : aveu de scope-creep (surgical / Karpathy #3) ---
 { printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
   printf "$TXT\n" "Fait. Au passage j'ai nettoye le code adjacent."; } > "$TMP/g2e"
 run "2e aveu scope-creep + prod     " "$TMP/g2e" 2 2e
 
 { printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
   printf "$TXT\n" "Fait. J'ai aussi refactorise la fonction voisine."; } > "$TMP/g2e2"
 run "2e aveu (j'ai aussi refacto)   " "$TMP/g2e2" 2 2e
 
@@ -94,7 +100,7 @@ printf "$TXT\n" "Au passage, note que le fichier existe deja." > "$TMP/g2e3"
 run "2e aveu SANS prod (passe)      " "$TMP/g2e3" 0
 
 { printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
+  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
   printf "$TXT\n" "Fait. J'ai supprime l'import devenu inutile."; } > "$TMP/g2e4"
 run "2e orphelin legitime (passe)   " "$TMP/g2e4" 0
 
@@ -177,7 +183,7 @@ run "2h .md relu + REVERIF (passe)   " "$TMP/g2h2" 0
 run "2h Read AVANT l'ecriture seul   " "$TMP/g2h3" 2 2h
 
 { printf '%s\n' "$USER"; printf "$TUSE\n" "Edit" '{"file_path":"C:/v/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"C:/v/x.js"}'; passe2i;
+  printf "$TUSE\n" "Read" '{"file_path":"C:/v/x.js"}';
   printf "$TXT\n" 'Fonction mise a jour.'; } > "$TMP/g2h4"
 run "2h code non .md (passe)         " "$TMP/g2h4" 0
 
@@ -216,61 +222,6 @@ run "2h .md d'un tour PRECEDENT      " "$TMP/g2h9" 0
   printf "$TUSE\n" "Read" '{"file_path":"C:/v/note.md"}';
   printf '%s\n' "$STOPSTR"; printf "$TXT\n" 'Voici la suite.'; } > "$TMP/g2h10"
 run "2h feedback Stop ne rouvre pas  " "$TMP/g2h10" 2
-
-# --- Gate 2i : code ecrit ce tour, passe de relecture forcee une fois (2026-10-05) ---
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
-  printf "$TXT\n" 'Fonction mise a jour.'; } > "$TMP/g2i1"
-run "2i code + verif, 1er arret      " "$TMP/g2i1" 2 2i
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; printf '%s\n' "$FB2I";
-  printf "$TXT\n" 'Rien a signaler.'; } > "$TMP/g2i2"
-run "2i feedback sans verif apres    " "$TMP/g2i2" 2 2i
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
-  printf "$TXT\n" 'Fonction mise a jour.'; } > "$TMP/g2i3"
-run "2i passe faite (passe)          " "$TMP/g2i3" 0
-
-# La passe d'un tour PRECEDENT ne vaut pas pour le code du tour courant.
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}'; passe2i;
-  printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/y.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/y.js"}'; } > "$TMP/g2i4"
-run "2i passe d'un tour precedent    " "$TMP/g2i4" 2 2i
-
-# Code ecrit APRES une passe : il lui en faut une nouvelle (tour long, reverification du 2026-10-05).
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; passe2i;
-  printf "$TUSE\n" "Edit" '{"file_path":"/c/y.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/y.js"}'; } > "$TMP/g2i5"
-run "2i code ecrit apres la passe    " "$TMP/g2i5" 2 2i
-{ cat "$TMP/g2i5"; passe2i; } > "$TMP/g2i5b"
-run "2i seconde passe faite (passe)  " "$TMP/g2i5b" 0
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; passe2i;
-  printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}'; } > "$TMP/g2i6"
-run "2i correction sans verif        " "$TMP/g2i6" 2 1
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Edit" '{"file_path":"/c/x.js"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/x.js"}';
-  printf "$TXT\n" 'Fonction mise a jour. [NO-VERIFY: pas de navigateur ici]'; } > "$TMP/g2i7"
-run "2i bypass ne couvre pas 2i      " "$TMP/g2i7" 2 2i
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "Write" '{"file_path":"C:/t/claude/s1/scratchpad/sonde.js"}';
-  printf "$TUSE\n" "Bash" '{"command":"node C:/t/claude/s1/scratchpad/sonde.js"}'; } > "$TMP/g2i8"
-run "2i script du scratchpad (passe) " "$TMP/g2i8" 0
-
-# Donnees et configuration ne sont pas du code : un tour qui les edite et les relit n'appelle pas la passe.
-{ printf '%s\n' "$USTR"; for f in /c/v/.obsidian/app.json /c/v/claude/projets-map.conf /c/v/Excalidraw/d.excalidraw; do
-    printf "$TUSE\n" "Edit" "{\"file_path\":\"$f\"}"; printf "$TUSE\n" "Read" "{\"file_path\":\"$f\"}"; done; } > "$TMP/g2i10"
-run "2i json, conf, excalidraw (passe)" "$TMP/g2i10" 0
-
-{ printf '%s\n' "$USTR"; printf "$TUSE\n" "NotebookEdit" '{"notebook_path":"/c/n.ipynb","new_source":"x"}';
-  printf "$TUSE\n" "Read" '{"file_path":"/c/n.ipynb"}'; } > "$TMP/g2i9"
-run "2i notebook (notebook_path)     " "$TMP/g2i9" 2 2i
-if echo "{\"transcript_path\":\"$TMP/g2i9\"}" | node "$HOOK" 2>&1 >/dev/null | grep -q '^  /c/n.ipynb$'; then echo "[OK]  2i nomme le notebook"; pass=$((pass+1));
-else echo "[x]   2i ne nomme pas le notebook"; fail=$((fail+1)); fi
 
 # --- Bypass : doit NOMMER ce qui n a pas ete observe ---
 printf "$TXT\n" "C est fait. [NO-VERIFY:]" > "$TMP/byp2"

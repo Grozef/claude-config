@@ -24,8 +24,14 @@ dec=("$meta/decisions-recurrentes.md" "$meta"/archive-decisions-[0-9]*.md)
 EXCLUDE='claude|obsidian|INDEX'
 
 # Inline code (`...`) is skipped: Obsidian does not turn a [[link]] written as code into a link
-tags() { sed 's/`[^`]*`//g' "$@" 2>/dev/null | grep -oE '\[\[[^]]+\]\]' | sed 's/^\[\[//; s/\]\]$//'; }
-rank() { grep -viE "^($EXCLUDE)$" | sort | uniq -c | sort -rn | head -n "$topN"; }
+# Fichiers absents ignores et grep sans resultat tolere : sinon sed (2) ou grep (1) sortaient en erreur
+# et pipefail + set -e coupait le script (erreurs.md absent, meta/ vide, aucun tag)
+tags() {
+  local f a=(); for f in "$@"; do [ -f "$f" ] && a+=("$f"); done
+  [ ${#a[@]} -gt 0 ] || return 0
+  sed 's/`[^`]*`//g' "${a[@]}" | { grep -oE '\[\[[^]]+\]\]' || true; } | sed 's/^\[\[//; s/\]\]$//'
+}
+rank() { { grep -viE "^($EXCLUDE)$" || true; } | sort | uniq -c | sort -rn | head -n "$topN"; }
 
 echo "== META-TALLY : $meta =="
 echo "-- volumétrie (entrées ##) --"
