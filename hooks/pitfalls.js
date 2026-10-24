@@ -7,7 +7,7 @@
 //                         (2) `sed -i` sur un fichier CRLF nomme en clair : sed de Git Bash le reecrit
 //                             en LF -> refus, passer par Edit. Incidents 2026-10-13, 2026-10-20,
 //                             2026-10-22, 2026-10-24. Angle mort : fichier designe par variable ou glob.
-//  PostToolUse TaskStop   (3) rappel : le shell arrete, ses fils (npx vite / quasar) gardent le port.
+//  PostToolUse TaskStop   (3) rappel : le shell arrete, ses fils (serveur de dev npx) gardent le port.
 //                             5 recidives titrees entre le 2026-09-23 et le 2026-10-19.
 //  PostToolUse Edit|Write (4) meta/erreurs.md : l'entree de tete doit finir par `Detecte : <mode>` de
 //                             meta/INDEX.md ; 46 des 64 erreurs du 16 au 24/10 n'en avaient pas (meta-tally).
@@ -105,7 +105,7 @@ try {
 
   if (ev === 'PostToolUse' && tool === 'TaskStop') {
     out({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext:
-      'TaskStop arrete le shell, pas toujours ses fils (npx vite, quasar dev, node) : avant d\'ecrire « arrete », '
+      'TaskStop arrete le shell, pas toujours ses fils (serveur de dev lance par npx, node) : avant d\'ecrire « arrete », '
       + 'controler le port (`netstat -ano | grep :<port>`). 5 recidives dans meta/erreurs.md.' } });
   }
 
