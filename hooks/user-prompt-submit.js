@@ -57,7 +57,7 @@ if (PROD.test(norm)) {
       const l = ['VAULT — deja ecrit la-dessus, lire avant de rediagnostiquer :'];
       for (const h of hits) {
         l.push('  ' + h.label + (h.label.includes('/concepts/') ? '' : ' :: ' + h.title) + '   [' + h.matched.join(' ') + ']');
-        if (h.excerpt) l.push('      ' + h.excerpt.slice(0, 110));
+        if (h.excerpt) l.push('      ' + h.excerpt);   // deja borne a 170 par excerpt() ; 110 coupait la consigne
       }
       l.push('Si hors sujet, ignorer sans commentaire.');
       parts.push(l.join('\n'));

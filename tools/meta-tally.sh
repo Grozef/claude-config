@@ -51,16 +51,21 @@ tags "${err[@]}" "${lea[@]}" "${dec[@]}" | rank | sed 's/^/  /'
 echo
 echo "-- TAUX D'ECHAPPEMENT par quinzaine (ligne 'Detecte :' des erreurs, format : meta/INDEX.md) --"
 # Echappe = trouve par la reverification demandee ou par l'utilisateur ; 'indetermine' sort du denominateur.
+# Un mode hors de la liste de meta/INDEX.md (« moi », « suite »...) et une entree sans ligne Detecte
+# sortent aussi du denominateur mais sont COMPTES : avant le 2026-10-24 ils etaient soit au denominateur
+# sans jamais compter comme echappes, soit invisibles (41 des 61 erreurs du 16 au 24/10 sans Detecte).
 if [ -f "${err[0]}" ]; then
   cat "${err[@]}" | tr -d '\r' | awk '
-    /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] / { q = substr($2, 1, 7) (substr($2, 9, 2) + 0 <= 15 ? " 01-15" : " 16-fin"); next }
-    /^Detecte : / && q != "" { n[q, $3]++; if ($3 != "indetermine") t[q]++; seen[q] = 1; q = "" }
+    BEGIN { split("avant-livraison gate relecteur apres-livraison reverif-demandee utilisateur indetermine", L, " "); for (k in L) ok[L[k]] = 1 }
+    /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] / { q = substr($2, 1, 7) (substr($2, 9, 2) + 0 <= 15 ? " 01-15" : " 16-fin"); c[q]++; seen[q] = 1; next }
+    /^Detecte : / && q != "" { if ($3 in ok) { n[q, $3]++; if ($3 != "indetermine") t[q]++ } else h[q]++; d[q]++; q = "" }
     END {
       for (q in seen) {
+        if (!d[q]) continue   # quinzaine anterieure a la ligne Detecte (posee depuis le 2026-09-14)
         e = n[q, "reverif-demandee"] + n[q, "utilisateur"]
-        printf "  %s : %d/%d echappes (%.0f %%) | avant %d, gate %d, relecteur %d, apres %d, reverif %d, utilisateur %d, indetermine %d\n", \
+        printf "  %s : %d/%d echappes (%.0f %%) | avant %d, gate %d, relecteur %d, apres %d, reverif %d, utilisateur %d, indetermine %d | hors liste %d, sans Detecte %d/%d\n", \
           q, e, t[q], (t[q] ? 100 * e / t[q] : 0), n[q, "avant-livraison"], n[q, "gate"], n[q, "relecteur"], \
-          n[q, "apres-livraison"], n[q, "reverif-demandee"], n[q, "utilisateur"], n[q, "indetermine"]
+          n[q, "apres-livraison"], n[q, "reverif-demandee"], n[q, "utilisateur"], n[q, "indetermine"], h[q], c[q] - d[q], c[q]
       }
     }' | sort
 else echo "  (erreurs.md absent)"; fi
