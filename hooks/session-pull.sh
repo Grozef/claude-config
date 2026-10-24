@@ -12,6 +12,15 @@ pull_repo() {
   before=$(git -C "$dir" rev-parse HEAD 2>/dev/null)
   out=$(timeout 20 git -C "$dir" pull 2>&1)
   if [ $? -eq 0 ]; then
+    # Autostash reapplique en conflit : le pull rend 0 mais laisse des chemins non fusionnes (incidents 2026-09-24, 2026-09-29)
+    local unmerged
+    unmerged=$(git -c core.quotePath=false -C "$dir" diff --name-only --diff-filter=U 2>/dev/null)
+    if [ -n "$unmerged" ]; then
+      echo "/!\\ git pull $name : CONFLIT a la reapplication des modifs locales, marqueurs dans :"
+      echo "$unmerged" | sed 's/^/    /'
+      echo "    resoudre, puis retirer l'autostash s'il est encore dans 'git -C \"$dir\" stash list' (message 'autostash')"
+      return 0
+    fi
     if [ "$(git -C "$dir" rev-parse HEAD 2>/dev/null)" = "$before" ]; then
       echo "git pull $name : a jour"
     else
