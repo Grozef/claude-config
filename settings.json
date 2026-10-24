@@ -89,6 +89,16 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/pitfalls.js",
+            "statusMessage": "Pieges recidivants (heredoc, sed -i CRLF)..."
+          }
+        ]
+      },
+      {
         "matcher": "SubagentHandback",
         "hooks": [
           {
@@ -119,6 +129,17 @@
             "command": "node ~/.claude/hooks/post-bash-silent-fail.js",
             "statusMessage": "Detection succes silencieux...",
             "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "TaskStop|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/pitfalls.js",
+            "statusMessage": "Pieges recidivants (TaskStop, format meta)...",
+            "continueOnBlock": true
           }
         ]
       }

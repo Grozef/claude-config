@@ -162,8 +162,9 @@ recaps de fixes ecrits a la main dans 4 formats differents.
    ```
    CRITIQUE et WARN seulement (INFO reste dans le rapport). Statuts : `a faire` / `fait` / `refuse (raison)`.
    Appliquer un fix = passer SA ligne a `fait` + hash du commit, dans la meme session.
-3. Vault (sauter si `$CLAUDE_VAULT` absent) : fiche `projets/<fiche>/<fiche>.md`, `<fiche>` trouvee
-   par le chemin du repo dans `## Projets (index + chemins)` de TODO.md (`Grep`). Section `## Revues`
+3. Vault (sauter si `$CLAUDE_VAULT` absent) : fiche `projets/<fiche>/<fiche>.md`, `<fiche>` = 1er mot
+   de la valeur de `$CLAUDE_VAULT/claude/projets-map.conf` pour la cle basename du repo (sinon de son
+   parent) ; cle absente : chemin du repo dans `## Projets (index + chemins)` de TODO.md (`Grep`). Section `## Revues`
    (la creer avant le bloc final tags / « Voir aussi » si absente), une ligne par revue, la plus
    recente en haut :
    `- YYYY-MM-DD <diff|fichier|audit complet> <cible> : `<chemin absolu du .html>` — X CRITIQUE / Y WARN / Z INFO — fixes : `<chemin absolu du recap>` 0/N faits (YYYY-MM-DD)`

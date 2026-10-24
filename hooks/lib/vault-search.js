@@ -101,8 +101,16 @@ function units(vault) {
   return out;
 }
 
+// Une entree de meta/ donne sa consigne APRES le recit de l'incident (caractere 465 en mediane dans
+// erreurs.md, jamais avant le 179e : audit du 2026-10-24) ; l'extrait coupe a 170 ne montrait que le
+// symptome. Pour meta/, l'extrait part donc de la consigne quand l'entree en porte une.
+// Ordre de priorite : la consigne avant le correctif (souvent du code), qui ne passe qu'a defaut.
+const RULES = [/\bR[eè]gle\s*:/i, /\bR[eé]flexe\s*:/i, /\bParade\s*:/i, /\bCorrectif\s*:/i];
 function excerpt(u) {
-  const body = u.text.split('\n').find(l => l.trim() && !l.startsWith('#')) || '';
+  let m = null;
+  if (u.label.startsWith('meta/')) for (const r of RULES) { m = r.exec(u.text); if (m) break; }
+  const body = m ? u.text.slice(m.index).split(/\r?\n/)[0]
+    : u.text.split('\n').find(l => l.trim() && !l.startsWith('#')) || '';
   return body.trim().length > 170 ? body.trim().slice(0, 167) + '...' : body.trim();
 }
 
