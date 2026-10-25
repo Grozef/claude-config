@@ -70,3 +70,6 @@ __pycache__/
 
 # --- Skills synchronises depuis claude.ai (contenu Anthropic, regenere par la synchro) ---
 skills/synced/
+
+# --- Skill tiers REA (copie de rea-agents, npm global ; reinstallable, non versionne ici) ---
+skills/reverse-engineer-anything/
