@@ -1,6 +1,6 @@
 # Règles globales
 
-Application : 9 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
+Application : 10 gates Stop bloquants (`~/.claude/hooks/stop-verify.js`, suite `test-gates.sh`).
 Ce fichier dit QUOI faire ; `~/.claude/verification-protocol.md` dit COMMENT le prouver.
 
 ## Pas de supposition — voir la source
@@ -75,6 +75,7 @@ Exceptions : le code et les tableaux markdown ; les projets littéraires (`creat
 Chemin : `$CLAUDE_VAULT`, défini dans `~/.claude/vault.conf` et injecté au démarrage sous la forme `Vault : <chemin>`. Sans cette ligne, il n'y a pas de vault : ne pas inventer de chemin.
 
 - Ne pas injecter les fiches vault au démarrage — MEMORY.md suffit ; les fiches se lisent à la demande.
+- Les 3 dernières notes de `sessions/<repo>/` arrivent au démarrage (`hooks/session-start.js`). Dire « je ne sais pas » ou « aucune trace » sur un projet exige d'avoir lu une note de session dans le tour (gate 2j) ; un grep à vide n'est pas une lecture.
 - Le rappel du vault est automatique : les notes proches de la demande arrivent avec le prompt (`hooks/lib/vault-search.js`), et celles proches d'une erreur d'outil avec l'échec. Les lire avant de rediagnostiquer.
 - Checkpoint : copie dans `sessions/<repo>/YYYY-MM-DD.md`. Journal dev : `journal/YYYY-MM-DD.md`, vue des sessions du jour (base embarquée), plus écrit par `/checkpoint` depuis le 2026-10-21.
 

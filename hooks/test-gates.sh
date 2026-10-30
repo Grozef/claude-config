@@ -18,7 +18,7 @@ export CLAUDE_NOVERIFY_LOG="$TMP/no-verify.log" CLAUDE_PENDING_LOG="$TMP/pending
 pass=0; fail=0
 
 run() { # label  transcript_path  expected_exit  [gate attendu]
-  echo "{\"transcript_path\":\"$2\"}" | node "$HOOK" >/dev/null 2>&1
+  echo "{\"transcript_path\":\"$2\"${RUN_CWD:+,\"cwd\":\"$RUN_CWD\"}}" | node "$HOOK" >/dev/null 2>&1
   local c=$?
   # Le code de sortie ne dit pas QUEL gate a bloque : a l'ajout du 2i (2026-10-05), deux cas 2e et un
   # cas 2h restaient en exit 2 en etant bloques par un autre gate. Le 4e argument le controle.
@@ -461,6 +461,49 @@ git -C "$RMIX" add app.js
 rung "commit, code indexe >= seuil   " "$TMP/o1" Bash "git -C $RMIX commit -qm lot" deny
 case "$LAST_OUT" in *'diff --cached'*) echo "[OK]  commit : le refus nomme le diff de l'index"; pass=$((pass+1)) ;;
   *) echo "[x]   commit : diff a relire mal nomme : $LAST_OUT"; fail=$((fail+1)) ;; esac
+
+# --- Gate 2j : ignorance annoncee sans note de session lue (vault factice par HOME) ---
+VH="$TMP/vh"; mkdir -p "$VH/.claude" "$VH/vault/sessions/projet" "$VH/projet" "$VH/mono/.git" "$VH/mono/sous" "$VH/vault/sessions/mono" "$VH/sansnote"
+printf 'CLAUDE_VAULT="%s"\n' "$VH/vault" > "$VH/.claude/vault.conf"
+printf 'note\n' > "$VH/vault/sessions/projet/2026-10-29.md"
+printf 'note\n' > "$VH/vault/sessions/mono/2026-10-29.md"
+NOTE="$VH/vault/sessions/projet/2026-10-29.md"
+g2j() { # label  texte  exit  gate  [cwd]  [ligne d'outil JSONL]
+  { [ -z "${6:-}" ] || printf '%s\n' "$6"; printf "$TXT\n" "$2"; } > "$TMP/g2j"
+  RUN_CWD="${5:-$VH/projet}" HOME="$VH" USERPROFILE="$VH" run "$1" "$TMP/g2j" "$3" "${4:-}"
+}
+READNOTE=$(printf "$TUSE" "Read" "{\"file_path\":\"$NOTE\"}")
+GREPNOTE=$(printf "$TUSE" "Grep" "{\"path\":\"$VH/vault/sessions\",\"pattern\":\"2253.1\"}")
+g2j "2j origine inconnue, rien lu    " "L’origine reste inconnue." 2 2j
+g2j "2j je ne sais pas d'ou, rien lu " "Je ne sais pas d’où viennent ces suffixes." 2 2j
+g2j "2j nulle part dans les notes    " "Cette valeur n’apparaît nulle part dans les notes." 2 2j
+g2j "2j je ne peux pas dire comment  " "Je ne peux pas dire comment ils sont arrivés en base." 2 2j
+g2j "2j note lue ce tour             " "L’origine reste inconnue." 0 "" "" "$READNOTE"
+g2j "2j un grep ne suffit pas        " "L’origine reste inconnue." 2 2j "" "$GREPNOTE"
+g2j "2j NO-VERIFY ne dispense pas    " "L’origine reste inconnue. [NO-VERIFY: pas lu]" 2 2j
+g2j "2j sous-dossier d'un monorepo   " "L’origine reste inconnue." 2 2j "$VH/mono/sous"
+g2j "2j projet sans note             " "L’origine reste inconnue." 0 "" "$VH/sansnote"
+g2j "2j question                     " "L’origine est-elle inconnue ?" 0
+g2j "2j mention entre backticks      " "Le gate cite \`aucune trace\` tel quel." 0
+g2j "2j phrase sans ignorance        " "Je sais d’où viennent ces numéros." 0
+g2j "2j je ne sais pas, nu           " "Je ne sais pas." 2 2j
+g2j "2j constat puis question        " "Aucune trace. Tu veux que je cherche ?" 2 2j
+g2j "2j constat, virgule, question   " "Aucune trace, tu veux que je cherche ?" 2 2j
+READAUTRE=$(printf "$TUSE" "Read" "{\"file_path\":\"$VH/vault/sessions/mono/2026-10-29.md\"}")
+g2j "2j note d'un autre projet       " "L’origine reste inconnue." 2 2j "" "$READAUTRE"
+
+# --- session-start.js : sortie sous 10 Ko, TODO et Decisions gardes (plafond Claude Code) ---
+HS="$HOME/.claude/hooks/session-start.js"
+mkdir -p "$VH/gros"
+printf -- '- [ ] [op] [moi] (2026-10-30) item [[gros]]\n' > "$VH/vault/TODO.md"
+mkdir -p "$VH/vault/sessions/gros"
+for j in 28 29; do { printf '# n\n'; for i in $(seq 1 300); do echo 'ligne de remplissage accentuée éééééééé'; done; printf '## Decisions\n- DECISION-%s\n' "$j"; } > "$VH/vault/sessions/gros/2026-10-$j.md"; done
+for i in $(seq 1 110); do echo 'ligne de SESSION accentuée, assez longue pour depasser le plafond éééééééééééééééééééé'; done > "$VH/gros/SESSION.md"
+SS=$(cd "$VH/gros" && HOME="$VH" USERPROFILE="$VH" node "$HS" 2>&1)
+if [ "$(printf '%s' "$SS" | wc -c)" -lt 10000 ]; then echo "[OK]  session-start sous 10 Ko"; pass=$((pass+1)); else echo "[x]   session-start : $(printf '%s' "$SS" | wc -c) octets"; fail=$((fail+1)); fi
+case "$SS" in *'TODO global'*) echo "[OK]  session-start garde le TODO"; pass=$((pass+1)) ;; *) echo "[x]   session-start : TODO perdu"; fail=$((fail+1)) ;; esac
+case "$SS" in *DECISION-29*) echo "[OK]  note coupee : Decisions gardee"; pass=$((pass+1)) ;; *) echo "[x]   note coupee : Decisions perdue"; fail=$((fail+1)) ;; esac
+case "$SS" in *$'\xef\xbf\xbd'*) echo "[x]   session-start : caractere casse"; fail=$((fail+1)) ;; *) echo "[OK]  coupe sans caractere casse"; pass=$((pass+1)) ;; esac
 
 echo "== $pass OK / $((pass+fail)) cas =="
 [ "$fail" = 0 ] || exit 1

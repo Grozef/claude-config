@@ -250,8 +250,36 @@ if (derniereEcriture.size) {
   }
 }
 
+// --- Gate 2j : IGNORANCE ou ABSENCE annoncee sans avoir lu une note de session (2026-10-30) ---
+// « L'origine reste inconnue » sur des numeros decides la veille : la reponse etait dans
+// sessions/<projet>/2026-10-29.md:20, et mon grep de la seule valeur `2253.1` n'avait rien rendu.
+// Seul un Read d'une note compte : un grep a vide est precisement ce qui a trompe. Non neutralise par
+// [NO-VERIFY:] : lire une note coute moins qu'une dispense. Sans note pour ce projet, rien a exiger.
+// Le rapport d'un sous-agent n'est pas concerne : il ne parle pas de l'historique du projet.
+const IGNORE = /(?<![a-zà-ÿ0-9_])(?:(?:origine|cause|provenance|source)\s+(?:\S+\s+){0,4}?(?:inconnue?|ind[ée]termin[ée]e?)|(?:origine|provenance)\s+(?:reste\s+|est\s+)?non\s+v[ée]rifi[ée]e?|je\s+ne\s+sais\s+(?:pas|plus)\b|je\s+ne\s+peux\s+pas\s+dire\s+(?:d['’]o[uù]|qui\b|quand\b|comment\b)|(?:aucune|pas\s+de)\s+traces?\b|rien\s+dans\s+(?:le\s+|les\s+|mes\s+|ma\s+)?(?:vault|notes?|sessions?)|nulle\s+part\s+dans)/i;
+// Par PROPOSITION : « Aucune trace, tu veux que je cherche ? » tient sur une ligne qui finit par « ? ».
+const texteIgnorance = sansCode.split('\n').filter(l => !/^\s*>/.test(l)).join('\n')
+  .split(/(?<=[.!?,;:])\s+|\n+/).map(p => p.trim()).filter(p => p && !p.endsWith('?')).join('\n');
+if (!agentTranscript && IGNORE.test(texteIgnorance)) {
+  const notes = require('./lib/session-notes.js')(j.cwd || process.cwd());
+  // Une note d'un AUTRE projet ne repond pas a une question sur celui-ci.
+  const dossiers = notes.map(n => normChemin(path.dirname(n.chemin)) + '/');
+  const noteLue = turnEvents.some(e => e.name === 'Read' && dossiers.some(d => normChemin(e.target).startsWith(d)));
+  if (notes.length && !noteLue) {
+    process.stderr.write('IGNORANCE OU ABSENCE ANNONCEE SANS NOTE DE SESSION LUE (hook never-assume / gate 2j) :\n'
+      + 'Tu dis ne pas savoir, ou que rien n est trace, sans avoir ouvert une note de session ce tour.\n'
+      + 'Un grep a vide sur une valeur exacte n est pas une lecture (meta/erreurs.md, 2026-10-30).\n\n'
+      + 'Avant de conclure : Read de la ou des notes ci-dessous, puis grep par NOTION (doublon, suffixe),\n'
+      + 'pas par valeur litterale :\n'
+      + notes.map(n => '  ' + n.chemin).join('\n') + '\n'
+      + '[NO-VERIFY:] ne neutralise pas ce gate.\n'
+      + protocole('etat-de-session'));
+    blocked('2j');
+  }
+}
+
 // Le bypass sert a affirmer SOUS RESERVE : il neutralise les gates d'assertion (2a-2g),
-// jamais les gates 1 et 2h, qui portent sur une production reelle non regardee.
+// jamais les gates 1, 2h et 2j.
 if (bypass) { clearPending(); process.exit(0); }
 
 // --- Gate 2 : AFFIRMATION non etayee dans le message final ---

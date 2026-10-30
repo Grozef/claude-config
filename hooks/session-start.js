@@ -1,5 +1,16 @@
 const fs = require('fs');
 
+// Octets deja sortis : au-dela de 10 Ko, Claude Code remplace TOUTE la sortie du hook par un apercu de
+// 2 Ko (lancement reel du 2026-10-30, un projet : notes, fin de SESSION.md et TODO perdus).
+let octetsSortis = 0;
+const ecrireStdout = process.stdout.write;
+process.stdout.write = function (s, ...reste) {
+  octetsSortis += Buffer.byteLength(String(s));
+  return ecrireStdout.call(this, s, ...reste);
+};
+// Coupe a n octets sans laisser de caractere multi-octets casse.
+const coupe = (s, n) => Buffer.from(s).subarray(0, n).toString().replace(/�+$/, '');
+
 // Le trio de contexte vit dans docs/documentation_claude/ (reorg 2026-07-17) ;
 // fallbacks documentation_claude/ puis racine pour les projets pas encore migres
 // -> l'ordre de migration ne casse pas la banniere.
@@ -66,8 +77,10 @@ if (hasSess) {
   // au cas ou un fichier grossit anormalement -> on borne le cout tokens au demarrage.
   const sess = fs.readFileSync(SESS, 'utf8');
   const ls = sess.split('\n');
-  if (ls.length <= 120) process.stdout.write(sess);
-  else process.stdout.write(ls.slice(0, 120).join('\n') + '\n[... SESSION.md tronque a 120 lignes — /context-update pour le reste]\n');
+  // 6500 octets : le TODO et les notes qui suivent doivent tenir sous le plafond de 10 Ko.
+  const tete = ls.slice(0, 120).join('\n');
+  if (ls.length <= 120 && Buffer.byteLength(sess) <= 6500) process.stdout.write(sess);
+  else process.stdout.write(coupe(tete, 6500) + '\n[... SESSION.md tronque — /context-update pour le reste]\n');
 }
 
 // Vault fiche injection DESACTIVEE — MEMORY.md contient deja le contexte projet.
@@ -149,6 +162,33 @@ try {
     if (c.essai + c.op + c.idee > 0) {
       console.log('toDo local (~/.claude/TODO.md) : ' + c.essai + ' essais | ' + c.op + ' op | ' + c.idee + ' idees');
     }
+  }
+} catch (e) { /* best-effort */ }
+
+// CONTENU des 3 dernieres notes de session (2026-10-30). SESSION.md ne garde pas tout : le 30/10,
+// j'ai annonce « origine inconnue » pour des numeros decides la veille, ecrits dans
+// sessions/<projet>/2026-10-29.md:20 et jamais ouverts. Une note injectee ne depend pas de ma
+// discipline, contrairement a une consigne de lecture. Bornes : 2000 octets par note et sortie
+// totale sous 9500 octets environ (plafond ci-dessus) ; la note la plus recente passe en premier,
+// celles qui ne tiennent plus sont nommees. Une note coupee garde sa section Decisions, qui est
+// en fin de note et que la coupe aurait retiree la premiere.
+try {
+  const PLAFOND = 9500;
+  const notes = require('./lib/session-notes.js')(process.cwd());
+  if (notes.length) console.log('\nDernieres notes de session (souvenirs : a confronter a git et au code) :');
+  for (const n of notes) {
+    // Marge pour le titre et la mention de troncature ; un octet vaut au plus un caractere.
+    const place = Math.min(2000, PLAFOND - octetsSortis - 300);
+    if (place < 300) { console.log('--- ' + n.rel + ' : non injectee (plafond)'); continue; }
+    const corps = fs.readFileSync(n.chemin, 'utf8').replace(/^---[\s\S]*?\n---\r?\n/, '').trim();
+    console.log('--- ' + n.rel + ' ---');
+    if (Buffer.byteLength(corps) <= place) { console.log(corps); continue; }
+    const m = corps.match(/^(?:#{2,3} |\*\*)D[eé]cisions[\s\S]*$/im);
+    const section = m ? m[0] : '';
+    const decisions = coupe(section, Math.floor(place / 2));
+    const debut = m ? corps.slice(0, m.index) : corps;
+    console.log(coupe(debut, place - Buffer.byteLength(decisions)) + '\n[... note tronquee]\n' + decisions
+      + (decisions.length < section.length ? '\n[... Decisions tronquees, lire ' + n.rel + ']' : ''));
   }
 } catch (e) { /* best-effort */ }
 
