@@ -53,6 +53,12 @@
             "command": "node ~/.claude/tools/transcript-metrics.js --archive",
             "statusMessage": "Archivage des transcripts...",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/tools/trash.sh --purge",
+            "statusMessage": "Purge de la corbeille (> 48 h)...",
+            "async": true
           }
         ]
       }
@@ -75,6 +81,11 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/pre-disk-sideeffect.sh",
             "statusMessage": "Verif effet de bord disque..."
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/pre-trash.js",
+            "statusMessage": "Corbeille : suppression directe ?"
           }
         ]
       },
@@ -228,12 +239,12 @@
   },
   "feedbackDrafts": "off",
   "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
   "switchModelsOnFlag": false,
   "autoMode": {
     "soft_deny": [
       "$defaults",
       "Bash(rm:docker/prod/*)"
     ]
-  },
-  "tui": "fullscreen"
+  }
 }

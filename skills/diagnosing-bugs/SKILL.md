@@ -129,6 +129,10 @@ If a correct seam exists:
 4. Watch it pass.
 5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
 
+### Two failed fixes
+
+If two fixes built on the same assumption have failed, stop fixing. Write that assumption in one sentence, test it directly, and return to Phase 3 with new hypotheses if it does not hold.
+
 ## Phase 6: Cleanup
 
 Required before declaring done:
