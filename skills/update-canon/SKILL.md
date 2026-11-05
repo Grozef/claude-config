@@ -1,7 +1,7 @@
 ---
 name: update-canon
 description: |
-  Met à jour creation/CONTINUITE.md avec les nouveaux faits établis après une session d'écriture.
+  Met à jour creation/CONTINUITE.md (ou, si elle est générée, le registre creation/canon/faits.ts puis régénération) avec les nouveaux faits établis après une session d'écriture.
   TRIGGER when: "update-canon", "mets à jour le canon", "j'ai écrit une scène", fin de session d'écriture
 allowed-tools: Read, Edit, Glob, Grep, Bash
 effort: low
@@ -17,4 +17,5 @@ effort: low
 2. **Isoler ce qui est NOUVEAU** par rapport à CONTINUITE.md : faits établis sur les personnages, phrases canoniques, flags ou variables d'état activés, évolutions de relations, chronologie, assets et médias référencés.
 3. **Ne rien supprimer** de l'existant sauf contradiction explicite. En cas de contradiction : `~~ancien fait~~ → nouveau fait (référence scène)`.
 4. **Présenter un résumé** des ajouts. Attendre confirmation s'ils sont importants.
-5. **Écrire dans `creation/CONTINUITE.md`** : ajouts dans la section du personnage concerné, phrases canoniques, date en tête de fichier, entrée au journal des sessions.
+5. **Si l'en-tête de CONTINUITE.md dit « Vue GÉNÉRÉE »** (Éveil depuis 2026-11-04) : NE PAS l'éditer. Écrire les faits dans le registre qu'il cite (`creation/canon/faits.ts`, contrat `Fait` : `id`, `categorie`, `statut`, `enonce`, `source` = nœuds réels, `connuDe`), contradiction = ancien fait passé en `statut: 'abandonne'`. Puis `npx narrative canon verifier` et `npx narrative canon continuite` pour régénérer la vue. Fin du skill.
+6. **Sinon, écrire dans `creation/CONTINUITE.md`** : ajouts dans la section du personnage concerné, phrases canoniques, date en tête de fichier, entrée au journal des sessions.

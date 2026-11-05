@@ -141,5 +141,5 @@ raison). Attendre la validation. **Jamais d'insertion automatique.**
    en suspens pour la scène suivante.
 5. Mettre à jour `creation/SESSION-WRITING.md` : chapitre en cours, dernier nœud inséré,
    beat émotionnel, prochaine étape, faits établis.
-6. Rappeler : `/update-canon` pour persister les faits dans CONTINUITE.md,
+6. Rappeler : `/update-canon` pour persister les faits (CONTINUITE.md, ou son registre source si elle est générée),
    `/update-brief` si des patterns durables ont émergé.
