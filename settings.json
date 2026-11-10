@@ -35,7 +35,7 @@
           },
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/session-start.js",
+            "command": "node $HOME/.claude/hooks/session-start.js",
             "statusMessage": "Chargement du contexte de session..."
           }
         ]
@@ -50,7 +50,7 @@
           },
           {
             "type": "command",
-            "command": "node ~/.claude/tools/transcript-metrics.js --archive",
+            "command": "node $HOME/.claude/tools/transcript-metrics.js --archive",
             "statusMessage": "Archivage des transcripts...",
             "async": true
           },
@@ -84,7 +84,7 @@
           },
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/pre-trash.js",
+            "command": "node $HOME/.claude/hooks/pre-trash.js",
             "statusMessage": "Corbeille : suppression directe ?"
           }
         ]
@@ -94,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/pre-guard-outward.js",
+            "command": "node $HOME/.claude/hooks/pre-guard-outward.js",
             "statusMessage": "Garde push/PR + mode stop..."
           }
         ]
@@ -104,7 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/pitfalls.js",
+            "command": "node $HOME/.claude/hooks/pitfalls.js",
             "statusMessage": "Pieges recidivants (heredoc, sed -i CRLF)..."
           }
         ]
@@ -137,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/post-bash-silent-fail.js",
+            "command": "node $HOME/.claude/hooks/post-bash-silent-fail.js",
             "statusMessage": "Detection succes silencieux...",
             "async": true
           }
@@ -148,7 +148,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/pitfalls.js",
+            "command": "node $HOME/.claude/hooks/pitfalls.js",
             "statusMessage": "Pieges recidivants (TaskStop, format meta)...",
             "continueOnBlock": true
           }
@@ -160,7 +160,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/post-fail-vault.js",
+            "command": "node $HOME/.claude/hooks/post-fail-vault.js",
             "statusMessage": "Recherche vault sur cet echec..."
           }
         ]
@@ -171,7 +171,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/user-prompt-submit.js",
+            "command": "node $HOME/.claude/hooks/user-prompt-submit.js",
             "statusMessage": "Rappels never-assume..."
           }
         ]

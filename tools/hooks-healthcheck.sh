@@ -19,7 +19,7 @@ if [ "${1:-}" = "--static" ]; then
   while IFS= read -r cmd; do
     scr="$(printf %s "$cmd" | grep -oE "[^ ]+\.(js|sh)" | head -1)"
     [ -n "$scr" ] || continue
-    scr="${scr/#\~/$HOME}"
+    scr="${scr/#\~/$HOME}"; scr="${scr/#\$HOME/$HOME}"
     case "$scr" in /*|[A-Za-z]:*) ;; *) scr="$HOME/.claude/$scr" ;; esac
     if [ ! -f "$scr" ]; then echo "[HOOK MORT] declare mais absent : $scr" >&2; probs=$((probs+1)); continue; fi
     case "$scr" in
