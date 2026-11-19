@@ -22,6 +22,9 @@
 #   cdc.sh inventory <path>
 #       GATE doc : liste TOUTE la doc (*.md, toute profondeur, hors vendor/node_modules/build)
 #       + dossiers docs/doc/toDo/.scribe.
+#   cdc.sh state <chemin>... [--json]
+#       Etat du projet (cdc_state.py) : stack, code, doc fonctionnelle, CDC existant, outillage de test,
+#       source du schema de BDD ; MODE RECOMMANDE (verify | hybride | retro | avant-projet | fill).
 #   cdc.sh lint <f.md>
 #       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, référence de
 #       source dans le texte (chemin de fichier, Classe::méthode), consigne du modèle restée dans un CDC rempli, mot entre
@@ -311,6 +314,10 @@ case "$cmd" in
   inventory)
     inventory "${1:?inventory: chemin requis}"
     ;;
+  state)
+    [ $# -gt 0 ] || die "state: au moins un chemin (repo ou brief)"
+    "$PY" "$(winpath "$tools/cdc_state.py")" "$@"
+    ;;
   lint)
     [ $# -le 1 ] || die "lint: un seul fichier .md attendu (les dépôts sources ne sont plus lus)"
     lint "${1:?lint: fichier .md requis}"
@@ -319,6 +326,6 @@ case "$cmd" in
     grep '^#' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | lint)"
+    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | lint)"
     ;;
 esac
