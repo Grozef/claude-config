@@ -34,6 +34,12 @@
 #   cdc.sh manifest <f.md> <nom> <type> <source> <section> [fichier...]
 #       Enregistre un diagramme dans <stem>-diagrams/manifest.json (cdc_manifest.py) : sha256 de sa source,
 #       pour que check signale un diagramme périmé.
+#   cdc.sh testplan <f.md> [--print]
+#       Plan de tests A.9 (ID T-F<n>-<k>) -> <stem>-tests.json (cdc_testplan.py) ; fichier de code conservé.
+#   cdc.sh testcov <f.md> <repo>
+#       Tests planifiés sans code, ID de code hors plan (exit 1 s'il y en a).
+#   cdc.sh dbtests <model.json> <repo_laravel> --trait RefreshDatabase|DatabaseTransactions|DatabaseMigrations [--style pest|phpunit] [--force]
+#       Tests BDD déterministes tirés du schéma (cdc_dbtests.py) -> tests/Cdc/Database/.
 #   cdc.sh lint <f.md>
 #       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, référence de
 #       source dans le texte (chemin de fichier, Classe::méthode), consigne du modèle restée dans un CDC rempli, mot entre
@@ -340,6 +346,20 @@ case "$cmd" in
     # source et fichiers : relatifs au dossier du CDC (chemins POSIX absolus non convertis)
     "$PY" "$(winpath "$tools/cdc_manifest.py")" "$(winpath "$1")" "${@:2}"
     ;;
+  testplan)
+    f="${1:?testplan: fichier .md requis}"; [ -f "$f" ] || die "testplan: introuvable: $f"
+    "$PY" "$(winpath "$tools/cdc_testplan.py")" "$(winpath "$f")" "${@:2}"
+    ;;
+  testcov)
+    [ $# -eq 2 ] || die "testcov: <cdc.md> <repo>"
+    [ -f "$1" ] || die "testcov: introuvable: $1"
+    [ -d "$2" ] || die "testcov: dossier introuvable: $2"
+    "$PY" "$(winpath "$tools/cdc_testplan.py")" "$(winpath "$1")" --cov "$(winpath "$2")"
+    ;;
+  dbtests)
+    [ $# -ge 2 ] || die "dbtests: <model.json> <repo_laravel> --trait ... [--style pest|phpunit] [--force]"
+    "$PY" "$(winpath "$tools/cdc_dbtests.py")" "$(winpath "$1")" "$(winpath "$2")" "${@:3}"
+    ;;
   lint)
     [ $# -le 1 ] || die "lint: un seul fichier .md attendu (les dépôts sources ne sont plus lus)"
     lint "${1:?lint: fichier .md requis}"
@@ -348,6 +368,6 @@ case "$cmd" in
     grep '^#' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | check | manifest | lint)"
+    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | check | manifest | testplan | testcov | dbtests | lint)"
     ;;
 esac
