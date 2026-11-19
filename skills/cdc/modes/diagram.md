@@ -18,4 +18,5 @@ Par diagramme (`<dir>` = dossier du .md, `<stem>` = son nom sans .md, `A=~/.clau
 2. `node $A/bin/archify.mjs validate <type> <json> --quality showcase --json` (9 contrôles sur 9), réparer selon les diagnostics, puis `node $A/bin/archify.mjs deliver <type> <json> <dir>/<stem>-diagrams/<nom>.html --quality showcase --json`. Exit != 0 -> ne pas insérer, le signaler.
 3. `node ~/.claude/tools/archify-snap.mjs <dir>/<stem>-diagrams/<nom>.html <dir>/<stem>-diagrams/<nom>.png`.
 4. Lire le PNG (Read), puis insérer : `![<Titre>](<stem>-diagrams/<nom>.png)` + `[Version interactive](<stem>-diagrams/<nom>.html)`.
+5. `bash ~/.claude/tools/cdc.sh manifest <cdc.md> <nom> <type> <stem>-diagrams/<nom>.json "<section>" <stem>-diagrams/<nom>.png <stem>-diagrams/<nom>.html` : empreinte de la source, pour que `/cdc verify` signale un diagramme périmé.
 

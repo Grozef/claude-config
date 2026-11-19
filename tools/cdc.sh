@@ -7,8 +7,9 @@
 #       Copie la trame figée vers <f.md> (défaut: documentation_contractuelle/cahier-des-charges.md).
 #       --html/--docx : convertit immédiatement (cas "doc vierge structuré sans modèle").
 #       Refuse d'écraser un fichier existant sauf --force.
-#   cdc.sh fiches <f.md> "F1=Nom" "F2=Nom" ...
-#       Remplace le bloc annexe A modèle par une fiche par fonctionnalité (cdc_fiches.py).
+#   cdc.sh fiches <f.md> [--append] "F1=Nom" "F2=Nom" ...
+#       Remplace le bloc annexe A modèle par une fiche par fonctionnalité (cdc_fiches.py) ;
+#       --append : ajoute des fiches après la dernière (CDC déjà rempli, ex. correction de /cdc verify).
 #   cdc.sh render [--no-html] [--no-docx] [--no-pdf] [--open] [--brand <nom|dir>|--no-brand] <f.md>
 #       Convertit un fichier déjà rempli (cas workflow : scaffold -> remplissage -> render).
 #       Par défaut : .html + .pdf (Chrome/Edge headless) + .docx (templates/reference-cdc.docx,
@@ -25,6 +26,14 @@
 #   cdc.sh state <chemin>... [--json]
 #       Etat du projet (cdc_state.py) : stack, code, doc fonctionnelle, CDC existant, outillage de test,
 #       source du schema de BDD ; MODE RECOMMANDE (verify | hybride | retro | avant-projet | fill).
+#   cdc.sh check <f.md> [--json]
+#       GATE BLOQUANT de /cdc verify (cdc_check.py puis lint) : structure = trame (titres, en-têtes et
+#       séparateurs des tableaux), références F / US / RG / R / fiches, plan de tests T-F<n>-<k>,
+#       liens de diagrammes ; avertit des diagrammes périmés (manifest.json) ; compte les [À COMPLÉTER].
+#       --json : le rapport de cdc_check seul sur stdout (le lint passe sur stderr).
+#   cdc.sh manifest <f.md> <nom> <type> <source> <section> [fichier...]
+#       Enregistre un diagramme dans <stem>-diagrams/manifest.json (cdc_manifest.py) : sha256 de sa source,
+#       pour que check signale un diagramme périmé.
 #   cdc.sh lint <f.md>
 #       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, référence de
 #       source dans le texte (chemin de fichier, Classe::méthode), consigne du modèle restée dans un CDC rempli, mot entre
@@ -318,6 +327,19 @@ case "$cmd" in
     [ $# -gt 0 ] || die "state: au moins un chemin (repo ou brief)"
     "$PY" "$(winpath "$tools/cdc_state.py")" "$@"
     ;;
+  check)
+    f="${1:?check: fichier .md requis}"; [ -f "$f" ] || die "check: introuvable: $f"
+    rc=0
+    "$PY" "$(winpath "$tools/cdc_check.py")" "${@:2}" "$(winpath "$f")" "$(winpath "$root/trames/trame-modele.md")" || rc=1
+    # --json : stdout = le JSON seul, le texte du lint part sur stderr
+    case " ${*:2} " in *" --json "*) lint "$f" >&2 || rc=1 ;; *) lint "$f" || rc=1 ;; esac
+    exit "$rc"
+    ;;
+  manifest)
+    [ $# -ge 5 ] || die "manifest: <cdc.md> <nom> <type> <source> <section> [fichier...]"
+    # source et fichiers : relatifs au dossier du CDC (chemins POSIX absolus non convertis)
+    "$PY" "$(winpath "$tools/cdc_manifest.py")" "$(winpath "$1")" "${@:2}"
+    ;;
   lint)
     [ $# -le 1 ] || die "lint: un seul fichier .md attendu (les dépôts sources ne sont plus lus)"
     lint "${1:?lint: fichier .md requis}"
@@ -326,6 +348,6 @@ case "$cmd" in
     grep '^#' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | lint)"
+    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | check | manifest | lint)"
     ;;
 esac

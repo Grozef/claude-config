@@ -1,20 +1,21 @@
 ---
 name: cdc
 description: |
-  Genere un cahier des charges sur le modele unique Modele_CDC.docx (17 sections + annexe A par fonctionnalite), vierge ou rempli selon l'etat du projet (retro depuis un repo, avant-projet depuis un brief, hybride). Sortie .md + .docx (styles du modele) + .html + .pdf, diagrammes ; --type fill = squelette vierge. Sous-commandes : generate (defaut), diagram.
-  TRIGGER when: "cahier des charges", "genere le CDC", "/cdc", "redige les specs"
+  Genere un cahier des charges sur le modele unique Modele_CDC.docx (17 sections + annexe A par fonctionnalite), vierge ou rempli selon l'etat du projet (retro depuis un repo, avant-projet depuis un brief, hybride). Sortie .md + .docx (styles du modele) + .html + .pdf, diagrammes ; --type fill = squelette vierge. Sous-commandes : generate (defaut), diagram, verify (verifier et corriger un CDC).
+  TRIGGER when: "cahier des charges", "genere le CDC", "/cdc", "redige les specs", "verifie le CDC", "corrige le cahier des charges"
 allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
 # Skill : cdc
 # Invocation : /cdc [generate] [--type auto|cdc|fill] [--no-html] [--no-pdf] [--no-docx] [--no-diagrams] [chemin source | description du projet]
 #              /cdc diagram <type> <cdc.md> [cible]
+#              /cdc verify <cdc.md> [--report-only]
 
 **Argument :** $ARGUMENTS
 
 Modèle unique depuis le 2026-10-16 (décision utilisateur : uniformiser les CDC de tous les projets) : `templates/Modele_CDC.docx` (original), calqué en `trames/trame-modele.md` ; `templates/reference-cdc.docx` en est la reference-doc pandoc. Les anciennes trames `public|tech|full|cdcf` sont retirées. Mise à jour du modèle : section finale.
 
-Outils (tous via `bash ~/.claude/tools/cdc.sh <commande>`) : `state`, `inventory`, `scaffold`, `fiches`, `lint`, `render`, `docx2pdf`. Le déterministe passe par eux, jamais à la main.
+Outils (tous via `bash ~/.claude/tools/cdc.sh <commande>`) : `state`, `inventory`, `scaffold`, `fiches`, `check`, `lint`, `render`, `docx2pdf`. Le déterministe passe par eux, jamais à la main.
 
 ## Garde-fous (non négociables)
 
@@ -32,6 +33,7 @@ Le premier mot de `$ARGUMENTS` choisit le mode ; absent ou inconnu -> `generate`
 |---|---|---|
 | `generate` (defaut) | `modes/generate.md` | Produire un CDC : `--type auto` (defaut) choisit selon l'etat du projet (`cdc.sh state`), `cdc` rempli, `fill` vierge |
 | `diagram` | `modes/diagram.md` | Produire un diagramme et l'inserer dans un CDC existant (aussi appele par `generate`, Etape 3bis) |
+| `verify` | `modes/verify.md` | Verifier un CDC existant (`cdc.sh check` + contre-lecture) et le corriger, ou `--report-only` |
 
 ## Mettre à jour le modèle
 
