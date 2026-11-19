@@ -24,7 +24,7 @@ Un diagramme ne se dessine QUE depuis des faits déjà écrits dans le CDC, ou l
 6. `bash ~/.claude/tools/cdc.sh manifest <cdc.md> bdd db <stem>-diagrams/bdd.model.json "9.1" <stem>-diagrams/bdd.png <stem>-diagrams/bdd.html`.
 
 ## Type `class` — dbschema `diagram`
-1. Écrire `$D/<nom>.json` au format de la section « Diagrammes hors BDD » de `~/.claude/skills/dbschema/SKILL.md` (kind `class`). Chaque classe, attribut, méthode, relation et multiplicité vient du code lu (modèle Eloquent : `$fillable`, `$casts`, méthodes `hasMany` / `belongsTo` / ... ; entités, interfaces) ou du CDC : rien d'inventé ; dans le doute, l'omettre. Vue d'ensemble : classes métier seulement (pas les contrôleurs ni le framework) ; au-delà d'une vingtaine de classes, une vue par domaine (`groups`) ou par fiche.
+1. Écrire `$D/<nom>.json` selon `~/.claude/skills/uml/types/class.md` (format, sens des relations, lecture du code). Chaque classe, attribut, méthode, relation et multiplicité vient du code lu ou du CDC : rien d'inventé ; dans le doute, l'omettre.
 2. `bash ~/.claude/skills/dbschema/dbschema.sh diagram --model "$D/<nom>.json" --out "$D" --name <nom> --title "<Titre>"`. Code 2 = modèle invalide (corriger le JSON) ; code 1 = contrôles en échec (lire `$D/_build/check.json`, simplifier la vue) ; ne pas insérer sans `-> OK`.
 3. LIRE `$D/<nom>.png`, puis insérer `![<Titre>](<stem>-diagrams/<nom>.png)` + `[Version interactive](<stem>-diagrams/<nom>.html)`.
 4. `bash ~/.claude/tools/cdc.sh manifest <cdc.md> <nom> class <stem>-diagrams/<nom>.json "<section>" <stem>-diagrams/<nom>.png <stem>-diagrams/<nom>.html`.
