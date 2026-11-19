@@ -40,6 +40,9 @@
 #       Tests planifiés sans code, ID de code hors plan (exit 1 s'il y en a).
 #   cdc.sh dbtests <model.json> <repo_laravel> --trait RefreshDatabase|DatabaseTransactions|DatabaseMigrations [--style pest|phpunit] [--force]
 #       Tests BDD déterministes tirés du schéma (cdc_dbtests.py) -> tests/Cdc/Database/.
+#   cdc.sh draw --model <f.json> --out <dossier> --name <NOM> [--title "..."]
+#       Diagramme hors BDD (kind class...) par le moteur skills/cdc/diagram : modèle JSON -> elk -> contrôles
+#       bloquants -> <NOM>.html + <NOM>.png. Code 2 = modèle invalide, 1 = contrôles en échec (rien de livré).
 #   cdc.sh lint <f.md>
 #       GATE BLOQUANT (exit 1, cdc_lint.py) : vocabulaire de dette/audit/WIP, référence de
 #       source dans le texte (chemin de fichier, Classe::méthode), consigne du modèle restée dans un CDC rempli, mot entre
@@ -360,6 +363,26 @@ case "$cmd" in
     [ $# -ge 2 ] || die "dbtests: <model.json> <repo_laravel> --trait ... [--style pest|phpunit] [--force]"
     "$PY" "$(winpath "$tools/cdc_dbtests.py")" "$(winpath "$1")" "$(winpath "$2")" "${@:3}"
     ;;
+  draw)
+    model="" out="" name="" title=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --model|--out|--name|--title) [ $# -ge 2 ] || die "draw: $1 sans valeur" ;;&
+        --model) model="$2"; shift 2 ;;
+        --out) out="$2"; shift 2 ;;
+        --name) name="$2"; shift 2 ;;
+        --title) title="$2"; shift 2 ;;
+        *) die "draw: option inconnue $1" ;;
+      esac
+    done
+    [ -f "$model" ] || die "draw: --model fichier.json requis"
+    [ -n "$out" ] && [ -n "$name" ] || die "draw: --out DIR et --name NOM requis"
+    [[ "$name" =~ ^[A-Za-z0-9_.-]+$ ]] || die "draw: --name sans espace ni separateur ([A-Za-z0-9_.-])"
+    dgm="$root/diagram"
+    [ -d "$dgm/node_modules/elkjs" ] || (cd "$dgm" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null) || die "draw: npm ci a echoue dans $dgm"
+    # dossier de sortie cree par build.mjs APRES validation du modele ; titre exclu de la conversion de chemins MSYS (Git Bash)
+    MSYS2_ARG_CONV_EXCL='--title=' exec node "$dgm/lib/build.mjs" "$model" "$out" "$name" ${title:+"--title=$title"}
+    ;;
   lint)
     [ $# -le 1 ] || die "lint: un seul fichier .md attendu (les dépôts sources ne sont plus lus)"
     lint "${1:?lint: fichier .md requis}"
@@ -368,6 +391,6 @@ case "$cmd" in
     grep '^#' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | check | manifest | testplan | testcov | dbtests | lint)"
+    die "commande inconnue: '$cmd' (attendu: scaffold | fiches | render | docx2pdf | inventory | state | check | manifest | testplan | testcov | dbtests | draw | lint)"
     ;;
 esac

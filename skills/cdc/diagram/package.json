@@ -1,0 +1,8 @@
+{
+  "name": "cdc-diagram",
+  "private": true,
+  "type": "module",
+  "description": "Moteur de diagrammes du skill cdc (classes UML...) : modele JSON -> elk -> controles -> HTML + PNG.",
+  "engines": { "node": ">=18" },
+  "dependencies": { "elkjs": "0.12.0" }
+}

@@ -73,3 +73,6 @@ skills/synced/
 
 # --- Skill tiers REA (copie de rea-agents, npm global ; reinstallable, non versionne ici) ---
 skills/reverse-engineer-anything/
+
+# --- Dependances npm du moteur de diagrammes du skill cdc (reinstallables : npm ci dans skills/cdc/diagram) ---
+skills/cdc/diagram/node_modules/

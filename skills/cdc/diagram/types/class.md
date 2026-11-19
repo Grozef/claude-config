@@ -1,6 +1,6 @@
 # Type `class` — diagramme de classes UML
 
-Lu par `../SKILL.md` (garde-fous communs). Commande : `bash ~/.claude/skills/dbschema/dbschema.sh diagram --model <f.json> --out <dossier> --name <NOM> [--title "..."]`.
+Lu par `modes/diagram.md` du skill cdc (garde-fous communs dans `SKILL.md`). Commande : `bash ~/.claude/tools/cdc.sh draw --model <f.json> --out <dossier> --name <NOM> [--title "..."]`.
 
 ## Modele JSON
 ```json
@@ -11,7 +11,7 @@ Lu par `../SKILL.md` (garde-fous communs). Commande : `bash ~/.claude/skills/dbs
                 "mult_from": "1", "mult_to": "0..*", "label": "...", "navigable": true}],
  "groups": {"Domaine": ["User"]}}
 ```
-Exemple complet : `~/.claude/skills/dbschema/tests/fixtures/class.model.json`.
+Exemple complet : `~/.claude/skills/cdc/diagram/tests/fixtures/class.model.json`.
 
 ## Sens des relations
 - `inheritance` / `realization` : from = enfant, to = parent (triangle creux cote parent, parent dessine au-dessus ; realisation en pointilles).

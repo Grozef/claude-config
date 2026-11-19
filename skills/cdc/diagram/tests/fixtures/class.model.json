@@ -1,0 +1,28 @@
+{
+  "kind": "class",
+  "title": "Inspections (classes)",
+  "classes": [
+    {"name": "Model", "stereotype": "abstract", "methods": [{"visibility": "+", "name": "save", "returns": "bool"}]},
+    {"name": "User", "attributes": [{"visibility": "+", "name": "email", "type": "string"}, {"visibility": "-", "name": "password", "type": "string"}, {"visibility": "+", "name": "role", "type": "Role"}],
+     "methods": [{"visibility": "+", "name": "isAdmin", "returns": "bool"}]},
+    {"name": "Inspection", "attributes": [{"visibility": "+", "name": "status", "type": "Status"}, {"visibility": "+", "name": "date", "type": "date"}],
+     "methods": [{"visibility": "+", "name": "submit"}, {"visibility": "+", "name": "conclude", "params": "text: string"}]},
+    {"name": "Subject", "attributes": [{"visibility": "+", "name": "criticity", "type": "int"}]},
+    {"name": "Photo", "attributes": [{"visibility": "+", "name": "path", "type": "string"}]},
+    {"name": "Status", "stereotype": "enum", "attributes": [{"name": "DRAFT"}, {"name": "SUBMITTED"}, {"name": "CLOSED"}]},
+    {"name": "ReportService", "methods": [{"visibility": "+", "name": "render", "params": "i: Inspection", "returns": "Pdf"}]},
+    {"name": "Exportable", "stereotype": "interface", "methods": [{"visibility": "+", "name": "export", "returns": "array"}]}
+  ],
+  "relations": [
+    {"from": "User", "to": "Model", "kind": "inheritance"},
+    {"from": "Inspection", "to": "Model", "kind": "inheritance"},
+    {"from": "Subject", "to": "Model", "kind": "inheritance"},
+    {"from": "Inspection", "to": "Exportable", "kind": "realization"},
+    {"from": "User", "to": "Inspection", "kind": "association", "label": "realise", "mult_from": "1", "mult_to": "0..*", "navigable": true},
+    {"from": "Inspection", "to": "Subject", "kind": "composition", "mult_from": "1", "mult_to": "1..*"},
+    {"from": "Subject", "to": "Photo", "kind": "aggregation", "mult_from": "1", "mult_to": "0..*"},
+    {"from": "Inspection", "to": "Status", "kind": "association"},
+    {"from": "ReportService", "to": "Inspection", "kind": "dependency", "label": "lit"}
+  ],
+  "groups": {"Domaine": ["Inspection", "Subject", "Photo", "Status"]}
+}

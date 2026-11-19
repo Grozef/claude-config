@@ -6,7 +6,7 @@ Lu par `SKILL.md` (garde-fous communs la-bas, toujours applicables). Arguments :
 
 - `--type` : `auto` (défaut, Étape 1) | `cdc` (rempli) | `fill` (squelette vierge, consignes en place). Un ancien type (`public|tech|full|cdcf`) est refusé par `cdc.sh` : le signaler et proposer `cdc`.
 - Rendu par défaut : .docx + .html + .pdf (le PDF vient du HTML). `--no-docx`, `--no-html` (coupe aussi le PDF), `--no-pdf`.
-- Diagrammes : par défaut pour `cdc` (Étape 3bis, `modes/diagram.md` : base de données et classes par dbschema quand la source existe, architecture / processus / séquence / cycle de vie). `--no-diagrams` pour les couper. Jamais pour `fill`.
+- Diagrammes : par défaut pour `cdc` (Étape 3bis, `modes/diagram.md` : base de données par dbschema et classes par `cdc.sh draw` quand la source existe, architecture / processus / séquence / cycle de vie). `--no-diagrams` pour les couper. Jamais pour `fill`.
 - Reste de `$ARGUMENTS` = chemin source ou description du projet.
 
 ## Étape 1 — Détecter la/les source(s) (sauf type=fill)
