@@ -2,14 +2,20 @@ import re, sys, zipfile
 src, dst = sys.argv[1], sys.argv[2]
 zin = zipfile.ZipFile(src)
 styles = zin.read('word/styles.xml').decode('utf-8')
-# 1. Heading1-3 definis deux fois (generateur docx) : garder la 2e definition, la detaillee.
-for h in ('Heading1', 'Heading2', 'Heading3'):
-    pat = re.compile(r'<w:style w:type="paragraph" w:styleId="%s">.*?</w:style>' % h, re.S)
+# 1. Titres 1-3, reperes par leur NOM (« heading 1 »...) : l'identifiant varie selon la langue de Word (Heading1, Titre1).
+#    Definis deux fois (generateur docx du premier modele) : garder la 2e definition, la detaillee ; une fois : tels quels.
+for h in ('heading 1', 'heading 2', 'heading 3'):
+    pat = re.compile(r'<w:style w:type="paragraph"[^>]*>\s*<w:name w:val="%s"/>.*?</w:style>' % h, re.S | re.I)
     found = pat.findall(styles)
-    assert len(found) == 2, (h, len(found))
-    styles = styles.replace(found[0], '', 1)
-# 2. Page de titre du modele (mise en forme directe des 2 premiers paragraphes) -> styles Title / Subtitle.
-title_old = re.search(r'<w:style w:type="paragraph" w:styleId="Title">.*?</w:style>', styles, re.S).group(0)
+    assert len(found) in (1, 2), (h, len(found))
+    if len(found) == 2:
+        styles = styles.replace(found[0], '', 1)
+# 2. Page de titre du modele (mise en forme directe des 2 premiers paragraphes) -> styles Title / Subtitle
+#    (remplacent le Title existant, ou s'ajoutent s'il n'y en a pas).
+m = re.search(r'<w:style w:type="paragraph" w:styleId="Title">.*?</w:style>', styles, re.S)
+if m is None:
+    styles = styles.replace('</w:styles>', '<!--title--></w:styles>')
+title_old = m.group(0) if m else '<!--title-->'
 title_new = ('<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/>'
              '<w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="80"/></w:pPr>'
              '<w:rPr><w:b/><w:bCs/><w:color w:val="1F4E78"/><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr></w:style>'

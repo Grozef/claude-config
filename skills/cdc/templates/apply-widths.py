@@ -13,9 +13,13 @@ else:
 spec = []  # (cellules d'en-tete, largeurs)
 for t in re.findall(r'<w:tbl>.*?</w:tbl>', x, re.S):
     g = [int(v) for v in re.findall(r'<w:gridCol w:w="(\d+)"', t)]
-    row = re.search(r'<w:tr>.*?</w:tr>', t, re.S).group(0)
-    cells = [''.join(re.findall(r'<w:t[^>]*>([^<]*)', c)).replace('&apos;', "'")
-             for c in re.findall(r'<w:tc>.*?</w:tc>', row, re.S)]
+    # <w:tr> / <w:tc> avec ou sans attributs (Word en ajoute : w:rsidR...)
+    m = re.search(r'<w:tr(?:\s[^>]*)?>.*?</w:tr>', t, re.S)
+    if m is None:
+        continue
+    row = m.group(0)
+    cells = [''.join(re.findall(r'<w:t(?:\s[^>]*)?>([^<]*)', c)).replace('&apos;', "'")
+             for c in re.findall(r'<w:tc(?:\s[^>]*)?>.*?</w:tc>', row, re.S)]
     spec.append((cells, g))
 
 STRIP = str.maketrans('', '', '*[]\\')

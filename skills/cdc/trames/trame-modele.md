@@ -110,11 +110,11 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 
 [*Une ligne par fonctionnalité. Chaque fonctionnalité fait ensuite l'objet d'une fiche technique (annexe A).*]{custom-style="Consigne"}
 
-| # | Fonctionnalité | Description | Priorité | Livrable |
-|--------|----------------------|-----------------------------------|----------------|--------------------|
-| [*F1*]{custom-style="Consigne"} | | | [*Must / Should / Could*]{custom-style="Consigne"} | |
-| [*F2*]{custom-style="Consigne"} | | | | |
-| [*F3*]{custom-style="Consigne"} | | | | |
+| # | Fonctionnalité | Description | User stories | Priorité | Livrable |
+|-------|-------------------|------------------------------|-------------|-------------|-----------------|
+| [*F1*]{custom-style="Consigne"} | | | [*US-01, US-02*]{custom-style="Consigne"} | [*Must / Should / Could*]{custom-style="Consigne"} | |
+| [*F2*]{custom-style="Consigne"} | | | | | |
+| [*F3*]{custom-style="Consigne"} | | | | | |
 
 ## 6.3 User stories
 
@@ -165,13 +165,77 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 
 [*Référence du schéma, tables principales, liens avec d'autres bases.*]{custom-style="Consigne"}
 
+### Organisation des tables
+
+[*Une ligne par groupe de tables : les tables du groupe et leur rôle.*]{custom-style="Consigne"}
+
+| Groupe | Tables | Rôle |
+|----------------|-----------------------------------------------|-------------------------------------|
+| | | |
+| | | |
+
+### Principes
+
+[*Les règles de conception du modèle de données (données partagées, versionnement, traçabilité, ce qui n'est pas stocké).*]{custom-style="Consigne"}
+
 ## 9.2 Import et reprise de données
 
 [*Sources, format, règles de validation, traitement des erreurs.*]{custom-style="Consigne"}
 
+**Sources**
+
+[*Les fichiers importés et ce que chacun alimente.*]{custom-style="Consigne"}
+
+| Liste | Modèle de fiche utilisé |
+|--------------------|--------------------------------------------------------------------------------|
+| | |
+| | |
+
+**Format**
+
+[*Format des fichiers et paramétrage de l'import (colonnes, feuille, plage de lignes).*]{custom-style="Consigne"}
+
+**Règles de validation**
+
+| Donnée | Vide autorisé | Doublon autorisé | Remarque |
+|----------------------|-----------|-------------|------------------------------------------------------|
+| | | | |
+| | | | |
+
+**Déroulement**
+
+[*Les étapes de l'import, de la sélection du fichier à la confirmation.*]{custom-style="Consigne"}
+
+**Pré-remplissage**
+
+[*Les données importées qui pré-remplissent d'autres éléments, et ce qui reste modifiable.*]{custom-style="Consigne"}
+
+**Reprise des données existantes**
+
+[*Données des systèmes ou projets antérieurs à reprendre, ou pas.*]{custom-style="Consigne"}
+
 ## 9.3 Conservation et archivage
 
 [*Durées de conservation, format d'archive, suppression.*]{custom-style="Consigne"}
+
+### Conservation des fiches
+
+[*Verrouillage, versions, historisation de ce qui est conservé.*]{custom-style="Consigne"}
+
+### Format d'archive
+
+[*Formats d'export et lieu de conservation des fichiers exportés.*]{custom-style="Consigne"}
+
+### Suppression
+
+| Élément | Règle |
+|-----------------|-----------------------------------------------------------------------------------|
+| | |
+| | |
+
+### Durées et sauvegardes
+
+[*Durée de conservation des données ; sauvegardes (fréquence, rétention, restauration).*]{custom-style="Consigne"}
 
 ## 9.4 Choix de conception
 
@@ -196,8 +260,8 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 
 ## 11.2 Estimation par fonctionnalité
 
-| # | Fonctionnalité | Heures | Difficulté (1-10) | Stack | Approche |
-|--------|----------------------------|------------|--------------|-----------|---------------------------|
+| # | Fonctionnalité | Heures | Approche | Difficulté (1-10) | Stack |
+|-------|------------------------------|-----------|---------------------|-----------------|--------------|
 | | | | | | |
 | | | | | | |
 | | **Sous-total** | | | | |
@@ -206,8 +270,17 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 
 ## 11.3 Calendrier
 
-| Semaine / jalon | Contenu | Résultat à montrer |
-|------------------|-----------------------------------|-----------------------------------------------|
+| Semaine | Contenu | Résultat à montrer |
+|------------|-----------------------------------|----------------------------------------------------|
+| | | |
+| | | |
+
+## 11.4 Hors estimation
+
+[*Ce qui est demandé ou envisagé mais non estimé, et quand le traiter.*]{custom-style="Consigne"}
+
+| Élément | Estimation indicative | Calendrier proposé |
+|---------------------------------------------------|--------------------|-----------------------------|
 | | | |
 | | | |
 
@@ -259,7 +332,7 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 ## 17.2 Documents de référence
 
 | Document | Version | Emplacement |
-|--------------------------------------------|----------------|----------------------------------------|
+|------------------------------------------------|---------|--------------------------------------------|
 | | | |
 | | | |
 
@@ -294,7 +367,7 @@ source reste [À COMPLÉTER]. Les blocs openxml sont les sauts de page du modèl
 ### A.3 Règles de gestion
 
 | # | Règle | Message / comportement en cas de non-respect |
-|----------|-------------------------------------------------|-----------------------------------------|
+|-------|--------------------------------------------|-------------------------------------------------|
 | | | |
 | | | |
 
