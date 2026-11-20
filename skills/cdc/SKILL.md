@@ -14,7 +14,7 @@ allowed-tools: Read, Write, Glob, Grep, Bash
 
 **Argument :** $ARGUMENTS
 
-Modèle unique depuis le 2026-10-16 (décision utilisateur : uniformiser les CDC de tous les projets), remplacé le 2026-11-19 par le CDC Commissioning v0.2 (plan, colonnes et styles ; annexe A et matrice RACI 5.1 gardées de l'ancien modèle) : `templates/Modele_CDC.docx` (original, en-tête ramené à « [Nom du projet] »), calqué en `trames/trame-modele.md` ; `templates/reference-cdc.docx` en est la reference-doc pandoc. Les anciennes trames `public|tech|full|cdcf` sont retirées. Mise à jour du modèle : section finale.
+Modèle unique depuis le 2026-10-16 (décision utilisateur : uniformiser les CDC de tous les projets), remplacé le 2026-11-19 par le CDC v0.2 d'un projet réel (plan, colonnes et styles ; annexe A et matrice RACI 5.1 gardées de l'ancien modèle) : `templates/Modele_CDC.docx` (original, en-tête ramené à « [Nom du projet] »), calqué en `trames/trame-modele.md` ; `templates/reference-cdc.docx` en est la reference-doc pandoc. Les anciennes trames `public|tech|full|cdcf` sont retirées. Mise à jour du modèle : section finale.
 
 Outils (tous via `bash ~/.claude/tools/cdc.sh <commande>`) : `state`, `inventory`, `scaffold`, `fiches`, `check`, `manifest`, `draw`, `testplan`, `testcov`, `dbtests`, `lint`, `render`, `docx2pdf`. Le déterministe passe par eux, jamais à la main. Moteur des diagrammes hors base : `diagram/` (lib, types, tests : `node --test diagram/tests/*.test.mjs` et `python -m pytest diagram/tests`).
 
@@ -42,5 +42,5 @@ Le premier mot de `$ARGUMENTS` choisit le mode ; absent ou inconnu -> `generate`
 Quand `Modele_CDC.docx` change (le comparer par `sha256sum` à l'original de l'utilisateur) :
 1. Copier le nouveau modèle dans `templates/Modele_CDC.docx`.
 2. `python3 templates/build-reference.py templates/Modele_CDC.docx templates/reference-cdc.docx` (styles dédoublonnés, style de tableau, Title / Subtitle et Consigne tirés de la mise en forme directe du modèle).
-3. Reporter les changements de plan dans `trames/trame-modele.md` (mêmes niveaux de titres, consignes en `[*…*]{custom-style="Consigne"}`), puis `python3 templates/apply-widths.py templates/Modele_CDC.docx trames/trame-modele.md` (largeurs des tableaux reconnus par leur en-tête ; un tableau sans correspondance est listé et garde ses largeurs, ex. ceux de l'annexe A absents du modèle Commissioning).
+3. Reporter les changements de plan dans `trames/trame-modele.md` (mêmes niveaux de titres, consignes en `[*…*]{custom-style="Consigne"}`), puis `python3 templates/apply-widths.py templates/Modele_CDC.docx trames/trame-modele.md` (largeurs des tableaux reconnus par leur en-tête ; un tableau sans correspondance est listé et garde ses largeurs, ex. ceux de l'annexe A absents du nouveau modèle).
 4. Contrôler : `cdc.sh scaffold --type fill --docx`, `cdc.sh docx2pdf`, et comparer les images au modèle exporté de la même façon.

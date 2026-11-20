@@ -17,7 +17,10 @@ n=$(printf '%s\n' "$files" | wc -l)
 # Contenu tiers exclu des controles 2-5 (pas ecrit ici, faux positifs par centaines le
 # 2026-09-30 : noms de projets dans les licences, pseudo-IP et "token =" d'archify) : skills
 # vendorises de skills-lock.json et fichiers LICENSE*. Anti-troncature et index : tout.
-vendor=$(node -e 'try{console.log(Object.keys(require(process.cwd()+"/skills-lock.json").skills).join("|"))}catch(e){}' 2>/dev/null)
+# path.join et pas process.cwd()+"/skills-lock.json" : sous Git Bash, MSYS reecrit l'argument
+# qui contient "/skills-lock.json" en chemin Windows, le require echoue en silence et plus
+# rien n'est exclu (constate le 2026-11-20 : faux "secrets" d'archify).
+vendor=$(node -e 'try{console.log(Object.keys(require(require("path").join(process.cwd(),"skills-lock.json")).skills).join("|"))}catch(e){}' 2>/dev/null)
 excl='(^|/)LICENSE[^/]*$'
 [ -n "$vendor" ] && excl="$excl|^skills/($vendor)/"
 scanned=$(printf '%s\n' "$files" | grep -vE "$excl")
@@ -56,7 +59,10 @@ scan() { # scan <libelle> <regex etendue>
 # un match EXACT sur le nom derive : les noms composes qui contiennent ce mot restent testes.
 # Allowlist : termes generiques de l'outillage qui apparaissent aussi comme nom de
 # dossier projet. Sans elle, des mots comme "fichiers" ou "cdc" noient les vrais hits.
-STOP='claude|obsidian|cdc|app|apps|back|front|frontend|saved|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection|vault'
+# 2026-11-20 : + mots courants ou noms d'outillage qui sont aussi des dossiers du vault
+# (hero, veille = « la veille », learnings = meta/learnings.md, quasar = framework,
+# dbschema = skill public publie volontairement).
+STOP='claude|obsidian|cdc|app|apps|back|front|frontend|saved|www|dev|api|web|src|doc|docs|tmp|new|old|test|tests|fichiers|generator|memory|config|skills|tools|hooks|notes|projet|projets|session|sessions|inspection|vault|hero|veille|learnings|quasar|dbschema'
 names=$( { [ -n "$vault" ] && ls -1 "$vault/projets" "$vault/sessions" 2>/dev/null
            ls -1 "$HOME/.claude/projects" 2>/dev/null | sed 's/.*-//'
          } | grep -v ':' | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]//g' \
@@ -68,9 +74,13 @@ if [ -z "$names" ]; then
 else
   cnt=$(printf '%s\n' "$names" | wc -l)
   pat=$(printf '%s\n' "$names" | paste -sd'|' -)
+  # Mots courants qui contiennent un nom de projet, effaces avant la recherche (2026-11-20 :
+  # deux noms courts etaient vus dans un import et dans un nom de classe). Le match reste une
+  # sous-chaine : un nom colle a d'autres lettres (prefixe, suffixe, camelCase) doit rester vu.
+  common='crypto|exportable'
   hits=""
   while IFS= read -r f; do
-    r=$(flat "$f" | grep -inE "$pat") && hits+=$(printf '%s\n' "$r" | sed "s#^#    $f:#")$'\n'
+    r=$(flat "$f" | sed -E "s/($common)//Ig" | grep -inE "$pat") && hits+=$(printf '%s\n' "$r" | sed "s#^#    $f:#")$'\n'
   done <<< "$scanned"
   if [ -n "$hits" ]; then say XX "noms de projets" "hits ($cnt noms testes) :"; printf '%s' "$hits"
   else say OK "noms de projets" "0 hit ($cnt noms testes)"; fi
