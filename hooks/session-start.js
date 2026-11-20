@@ -117,9 +117,22 @@ try {
     // Format PAR PROJET (2026-07-15) : le type est un tag inline [op]/[idee]/[revue]
     // apres la case a cocher, pas un titre de section. On compte les items NON TERMINES :
     // cases vides [ ] ET en cours [~] (2026-07-15 : un item [~] etait invisible a la reprise).
+    // Revue hebdomadaire (2026-11-20 : 74 items sur 112 jamais verifies, 1 sur 4 faux) :
+    // par bloc, date de derniere verification de chaque item ([verif], sinon sa date de creation).
+    let sect = '';
+    const stale = {};
     for (const l of lines) {
+      const h = l.match(/^## (.+?)\s*$/);
+      if (h) { sect = h[1]; continue; }
       const m = l.match(/^\s*-\s*\[([ ~])\]\s*\[(op|idee|revue)\]/);
       if (!m) continue;
+      const v = l.match(/\[verif (\d{4}-\d{2}-\d{2})/) || l.match(/\((\d{4}-\d{2}-\d{2})\)/);
+      // une [idee] n'a pas d'etat a verifier : elle bloquerait la ligne sur le meme bloc
+      if (v && m[2] !== 'idee' && Date.now() - Date.parse(v[1]) > 7 * 864e5) {
+        const s = stale[sect] || (stale[sect] = { oldest: v[1], n: 0 });
+        s.n++;
+        if (v[1] < s.oldest) s.oldest = v[1];
+      }
       const inProgress = m[1] === '~';
       counts[m[2]]++;
       if (/^\s*-\s*\[[ ~]\]\s*\[[a-z]+\]\s*\[toi\]/.test(l)) toi++;
@@ -133,6 +146,11 @@ try {
     if (total > 0) {
       // Total en tete : le 2026-10-19, « 88 op » a ete recopie comme nombre d'items (93).
       console.log('TODO global : ' + total + ' items (' + counts.op + ' op, ' + counts.idee + ' idees, ' + counts.revue + ' revues) | ' + toi + ' a toi  (/todo)');
+    }
+    const worst = Object.keys(stale).sort((a, b) => stale[a].oldest.localeCompare(stale[b].oldest))[0];
+    if (worst) {
+      const nStale = Object.values(stale).reduce((t, s) => t + s.n, 0);
+      console.log('toDo a reverifier : ' + nStale + ' items non verifies depuis 7 j ; bloc le plus ancien « ' + worst + ' » (' + stale[worst].n + ' items, depuis le ' + stale[worst].oldest + ') -> /todo verif ' + worst.split(' ')[0]);
     }
     if (mine.length > 0) {
       console.log('toDo lies a CE projet (a confronter a la "Prochaine etape" de SESSION.md) :');
